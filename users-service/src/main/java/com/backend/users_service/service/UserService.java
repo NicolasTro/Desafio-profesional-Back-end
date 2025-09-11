@@ -3,6 +3,9 @@ package com.backend.users_service.service;
 import com.backend.users_service.model.dto.UserRegisterRequest;
 import com.backend.users_service.model.domain.User;
 import com.backend.users_service.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
@@ -13,12 +16,17 @@ import java.util.*;
 @Service
 public class UserService {
 
+
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
     private final Random random = new SecureRandom();
     private final List<String> words;
 
+
+    @Autowired
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
+        this.passwordEncoder = new BCryptPasswordEncoder();
         this.words = loadWordsFromFile();
     }
 
@@ -39,7 +47,7 @@ public class UserService {
                 .dni(request.getDni())
                 .email(request.getEmail())
                 .telefono(request.getTelefono())
-                .password(request.getPassword()) // ⚠️ después encriptar con BCrypt
+                .password(passwordEncoder.encode(request.getPassword()))
                 .cvu(cvu)
                 .alias(alias)
                 .build();
