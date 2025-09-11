@@ -1,15 +1,14 @@
-package com.backend.users_service.entity.domain;
+package com.backend.users_service.model.domain;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Table(name = "users")
-@Data // Lombok: getters, setters, toString, etc.
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class User {
 
     @Id
@@ -20,7 +19,12 @@ public class User {
     private String apellido;
 
     @Column(unique = true, nullable = false)
+    private String dni;
+
+    @Column(unique = true, nullable = false)
     private String email;
+
+    private String telefono;
 
     private String password;
 

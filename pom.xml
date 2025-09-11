@@ -1,0 +1,27 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.backend</groupId>
+    <artifactId>back-end</artifactId>
+    <version>1.0.0</version>
+    <packaging>pom</packaging>
+
+    <properties>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <maven.compiler.release>21</maven.compiler.release>
+    </properties>
+
+    <name>Back-end</name>
+    <description>Proyecto backend - arquitectura de microservicios</description>
+
+    <modules>
+        <module>eureka-server</module>
+        <module>api-gateway</module>
+        <module>users-service</module>
+    </modules>
+
+
+</project>
