@@ -1,5 +1,7 @@
 package com.backend.auth_service.service;
 
+import com.backend.auth_service.exception.ResourceNotFoundException;
+import com.backend.auth_service.exception.UnauthorizedException;
 import com.backend.auth_service.model.dto.LoginRequest;
 import com.backend.auth_service.model.domain.User;
 import com.backend.auth_service.repository.UserRepository;
@@ -22,13 +24,12 @@ public class AuthService {
 
     public String login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
-        if (passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            // 🔐 Generar JWT
-            return jwtUtil.generateToken(user.getEmail());
-        } else {
-            throw new RuntimeException("Credenciales inválidas");
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new UnauthorizedException("Credenciales inválidas");
         }
+
+        return jwtUtil.generateToken(user.getEmail());
     }
 }

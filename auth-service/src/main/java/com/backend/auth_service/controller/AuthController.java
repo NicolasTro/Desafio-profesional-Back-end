@@ -5,7 +5,6 @@ import com.backend.auth_service.model.dto.LoginResponse;
 import com.backend.auth_service.service.AuthService;
 import com.backend.auth_service.util.JwtUtil;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,10 +15,7 @@ public class AuthController {
     private final AuthService authService;
     private final JwtUtil jwtUtil;
 
-
-
-
-    @Autowired
+    
     public AuthController(AuthService authService, JwtUtil jwtUtil) {
         this.authService = authService;
         this.jwtUtil = jwtUtil;

@@ -1,5 +1,7 @@
 package com.backend.users_service.service;
 
+import com.backend.users_service.exception.ResourceNotFoundException;
+import com.backend.users_service.exception.ValidationException;
 import com.backend.users_service.model.dto.UserRegisterRequest;
 import com.backend.users_service.model.domain.User;
 import com.backend.users_service.repository.UserRepository;
@@ -33,7 +35,17 @@ public class UserService {
     public User registerUser(UserRegisterRequest request) {
         // Validar email único
         userRepository.findByEmail(request.getEmail())
-                .ifPresent(u -> { throw new RuntimeException("El email ya está registrado"); });
+                .ifPresent(u -> {
+                    throw new RuntimeException("El email ya está registrado");
+                });
+
+        if (request.getPassword().length() < 6) {
+            throw new ValidationException("La contraseña debe tener al menos 6 caracteres");
+        }
+
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new ValidationException("El email ya está registrado");
+        }
 
         // Generar CVU (22 dígitos)
         String cvu = generateCvu();
@@ -81,4 +93,10 @@ public class UserService {
             throw new RuntimeException("Error cargando words.txt", e);
         }
     }
+
+    public User getUserById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario con id " + id + " no existe"));
+    }
+
 }
