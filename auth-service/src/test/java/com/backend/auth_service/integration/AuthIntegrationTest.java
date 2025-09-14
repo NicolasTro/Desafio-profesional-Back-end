@@ -1,12 +1,11 @@
 package com.backend.auth_service.integration;
 
-import com.backend.auth_service.model.dto.LoginRequest;
+
 import com.backend.auth_service.model.domain.User;
 import com.backend.auth_service.repository.UserRepository;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -25,7 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.ANY)
-@AutoConfigureMockMvc // 👈 agrega esta
+@AutoConfigureMockMvc
 class AuthIntegrationTest {
 
     @Autowired

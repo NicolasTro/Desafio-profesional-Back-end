@@ -1,6 +1,5 @@
 package com.backend.users_service.service;
 
-import com.backend.users_service.exception.ResourceNotFoundException;
 import com.backend.users_service.exception.ValidationException;
 import com.backend.users_service.model.dto.UserRegisterRequest;
 import com.backend.users_service.model.domain.User;
@@ -31,12 +30,12 @@ public class UserService {
     }
 
     public User registerUser(UserRegisterRequest request) {
-        // ✅ Validar email nulo/vacío
+        //  Validar email nulo/vacío
         if (request.getEmail() == null || request.getEmail().isBlank()) {
             throw new ValidationException("El email no puede ser nulo o vacío");
         }
 
-        // ✅ Validar password nulo/vacío y longitud
+        //  Validar password nulo/vacío y longitud
         if (request.getPassword() == null || request.getPassword().isBlank()) {
             throw new ValidationException("La contraseña no puede ser nula o vacía");
         }
@@ -44,17 +43,17 @@ public class UserService {
             throw new ValidationException("La contraseña debe tener al menos 6 caracteres");
         }
 
-        // ✅ Validar DNI nulo/vacío
+        //  Validar DNI nulo/vacío
         if (request.getDni() == null || request.getDni().isBlank()) {
             throw new ValidationException("El DNI no puede ser nulo o vacío");
         }
 
-        // ✅ Validar teléfono nulo/vacío
+        //  Validar teléfono nulo/vacío
         if (request.getTelefono() == null || request.getTelefono().isBlank()) {
             throw new ValidationException("El teléfono no puede ser nulo o vacío");
         }
 
-        // ✅ Validar email único
+        //  Validar email único
         userRepository.findByEmail(request.getEmail())
                 .ifPresent(u -> {
                     throw new ValidationException("El email ya está registrado");
@@ -107,8 +106,5 @@ public class UserService {
         }
     }
 
-    public User getUserById(Long id) {
-        return userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario con id " + id + " no existe"));
-    }
+
 }
