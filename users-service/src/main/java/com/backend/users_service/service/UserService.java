@@ -18,12 +18,10 @@ import java.util.*;
 @Service
 public class UserService {
 
-
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final Random random = new SecureRandom();
     private final List<String> words;
-
 
     @Autowired
     public UserService(UserRepository userRepository) {
@@ -33,19 +31,34 @@ public class UserService {
     }
 
     public User registerUser(UserRegisterRequest request) {
-        // Validar email único
-        userRepository.findByEmail(request.getEmail())
-                .ifPresent(u -> {
-                    throw new RuntimeException("El email ya está registrado");
-                });
+        // ✅ Validar email nulo/vacío
+        if (request.getEmail() == null || request.getEmail().isBlank()) {
+            throw new ValidationException("El email no puede ser nulo o vacío");
+        }
 
+        // ✅ Validar password nulo/vacío y longitud
+        if (request.getPassword() == null || request.getPassword().isBlank()) {
+            throw new ValidationException("La contraseña no puede ser nula o vacía");
+        }
         if (request.getPassword().length() < 6) {
             throw new ValidationException("La contraseña debe tener al menos 6 caracteres");
         }
 
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new ValidationException("El email ya está registrado");
+        // ✅ Validar DNI nulo/vacío
+        if (request.getDni() == null || request.getDni().isBlank()) {
+            throw new ValidationException("El DNI no puede ser nulo o vacío");
         }
+
+        // ✅ Validar teléfono nulo/vacío
+        if (request.getTelefono() == null || request.getTelefono().isBlank()) {
+            throw new ValidationException("El teléfono no puede ser nulo o vacío");
+        }
+
+        // ✅ Validar email único
+        userRepository.findByEmail(request.getEmail())
+                .ifPresent(u -> {
+                    throw new ValidationException("El email ya está registrado");
+                });
 
         // Generar CVU (22 dígitos)
         String cvu = generateCvu();
@@ -98,5 +111,4 @@ public class UserService {
         return userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario con id " + id + " no existe"));
     }
-
 }
