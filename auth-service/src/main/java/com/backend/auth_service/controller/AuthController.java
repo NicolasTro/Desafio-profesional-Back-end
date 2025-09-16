@@ -5,6 +5,7 @@ import com.backend.auth_service.model.dto.LoginResponse;
 import com.backend.auth_service.service.AuthService;
 import com.backend.auth_service.util.JwtUtil;
 import io.jsonwebtoken.JwtException;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,12 +26,14 @@ public class AuthController {
     }
 
     @PostMapping("/login")
+    @Operation(summary = "Login de usuario", description = "Logue de usuario ingresando email y password")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         String token = authService.login(request);
         return ResponseEntity.ok(new LoginResponse(token));
     }
 
     @PostMapping("/logout")
+    @Operation(summary = "Logout de usuario", description = "Cierra sesión del usuario")
     public ResponseEntity<Map<String, String>> logout(
             @RequestHeader(value = "Authorization", required = false) String token) {
 

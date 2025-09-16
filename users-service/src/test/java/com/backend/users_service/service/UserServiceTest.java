@@ -54,8 +54,8 @@ class UserServiceTest {
         User savedUser = userService.registerUser(request);
 
         assertNotNull(savedUser);
-        assertNotEquals("123456", savedUser.getPassword()); // no se guarda en claro
-        assertTrue(savedUser.getPassword().startsWith("$2a$")); // bcrypt generado
+        assertNotEquals("123456", savedUser.getPassword());
+        assertTrue(savedUser.getPassword().startsWith("$2a$"));
 
         assertNotNull(savedUser.getCvu());
         assertEquals(22, savedUser.getCvu().length());
