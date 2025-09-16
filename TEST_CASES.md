@@ -2,6 +2,10 @@
 
 https://docs.google.com/spreadsheets/d/1SXlsOfC-JlmyOVQh0Jlj-UF23aEULhzBB7RZ5ZvcjNI/edit?usp=sharing
 
+# LINK A JIRA
+
+https://nikolastroupkos.atlassian.net/jira/software/projects/DB/boards/35/backlog?epics=visible&sprintCompleted=&atlOrigin=eyJpIjoiYTcwYzZlNzhhNWZkNDRmNWEwMmRhNGM3N2YyOWZlNmEiLCJwIjoiaiJ9
+
 
 # Diseños de casos de prueba
 
