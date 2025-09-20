@@ -1,12 +1,15 @@
 package com.backend.auth_service.controller;
+import com.backend.auth_service.model.dto.RegisterRequest;
 
 import com.backend.auth_service.model.dto.LoginRequest;
 import com.backend.auth_service.model.dto.LoginResponse;
+import com.backend.auth_service.model.dto.RegisterResponse;
 import com.backend.auth_service.service.AuthService;
 import com.backend.auth_service.util.JwtUtil;
 import io.jsonwebtoken.JwtException;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -48,6 +51,16 @@ public class AuthController {
 
         return ResponseEntity.ok(response);
     }
+
+
+    @PostMapping("/register")
+    @Operation(summary = "Registro de usuario", description = "Crea un nuevo usuario con credenciales y perfil")
+    public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
+        RegisterResponse response = authService.register(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+
 
 
 }

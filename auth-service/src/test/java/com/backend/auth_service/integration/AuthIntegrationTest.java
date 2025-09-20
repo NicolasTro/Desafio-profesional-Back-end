@@ -4,6 +4,7 @@ package com.backend.auth_service.integration;
 import com.backend.auth_service.model.domain.User;
 import com.backend.auth_service.repository.UserRepository;
 
+import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,7 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.ANY)
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @AutoConfigureMockMvc
 class AuthIntegrationTest {
 
@@ -34,12 +35,13 @@ class AuthIntegrationTest {
     private UserRepository userRepository;
 
     @BeforeEach
+    @Transactional
     void setup() {
         userRepository.deleteAll();
 
         User user = new User();
         user.setEmail("juan@example.com");
-        user.setPassword(new BCryptPasswordEncoder().encode("123456")); // 👉 encode con BCrypt
+        user.setPassword(new BCryptPasswordEncoder().encode("123456"));
         userRepository.save(user);
     }
     @Autowired
