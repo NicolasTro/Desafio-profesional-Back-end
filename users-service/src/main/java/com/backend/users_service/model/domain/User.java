@@ -12,8 +12,7 @@ import lombok.*;
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;  // mismo ID que en Auth
 
     private String nombre;
     private String apellido;
@@ -26,11 +25,10 @@ public class User {
 
     private String telefono;
 
-    private String password;
-
     @Column(unique = true, length = 22)
     private String cvu;
 
     @Column(unique = true)
     private String alias;
 }
+
