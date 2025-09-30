@@ -12,7 +12,7 @@ import lombok.*;
 public class User {
 
     @Id
-    private String id;  // mismo ID que en Auth
+    private String id;
 
     private String nombre;
     private String apellido;
