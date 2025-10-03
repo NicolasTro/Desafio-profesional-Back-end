@@ -1,66 +1,33 @@
 package com.backend.auth_service.controller;
-import com.backend.auth_service.model.dto.RegisterRequest;
 
-import com.backend.auth_service.model.dto.LoginRequest;
-import com.backend.auth_service.model.dto.LoginResponse;
-import com.backend.auth_service.model.dto.RegisterResponse;
+import com.backend.accounts_service.service.AccountService;
+import com.backend.auth_service.model.dto.*;
 import com.backend.auth_service.service.AuthService;
-import com.backend.auth_service.util.JwtUtil;
-import io.jsonwebtoken.JwtException;
-import io.swagger.v3.oas.annotations.Operation;
-import jakarta.validation.Valid;
+import com.backend.auth_service.service.RegistrationSagaService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.Map;
-
 @RestController
 @RequestMapping("/auth")
+@RequiredArgsConstructor
 public class AuthController {
 
     private final AuthService authService;
-    private final JwtUtil jwtUtil;
-
-    public AuthController(AuthService authService, JwtUtil jwtUtil) {
-        this.authService = authService;
-        this.jwtUtil = jwtUtil;
-    }
-
-    @PostMapping("/login")
-    @Operation(summary = "Login de usuario", description = "Logue de usuario ingresando email y password")
-    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-        String token = authService.login(request);
-        return ResponseEntity.ok(new LoginResponse(token));
-    }
-
-    @PostMapping("/logout")
-    @Operation(summary = "Logout de usuario", description = "Cierra sesión del usuario")
-    public ResponseEntity<Map<String, String>> logout(
-            @RequestHeader(value = "Authorization", required = false) String token) {
-
-        if (token == null || token.isBlank()) {
-            throw new JwtException("Token ausente o vacío");
-        }
-
-        String userEmail = jwtUtil.getSubjectFromToken(token);
-
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Logout exitoso para " + userEmail);
-
-        return ResponseEntity.ok(response);
-    }
+    private final RegistrationSagaService sagaService;
 
 
     @PostMapping("/register")
-    @Operation(summary = "Registro de usuario", description = "Crea un nuevo usuario con credenciales y perfil")
-    public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
-        RegisterResponse response = authService.register(request);
+    public ResponseEntity<RegisterResponse> register(@RequestBody RegisterRequest request) {
+        RegisterResponse response = sagaService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
+        return ResponseEntity.ok(authService.login(request));
+    }
 
 
 }

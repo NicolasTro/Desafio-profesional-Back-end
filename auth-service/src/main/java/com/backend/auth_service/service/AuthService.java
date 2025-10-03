@@ -1,82 +1,112 @@
 package com.backend.auth_service.service;
 
 import com.backend.auth_service.client.UsersClient;
-import com.backend.auth_service.exception.ResourceNotFoundException;
-import com.backend.auth_service.exception.UnauthorizedException;
-import com.backend.auth_service.model.domain.User;
-import com.backend.auth_service.model.dto.LoginRequest;
-import com.backend.auth_service.model.dto.RegisterRequest;
-import com.backend.auth_service.model.dto.RegisterResponse;
-import com.backend.auth_service.model.dto.UserProfileRequest;
-import com.backend.auth_service.repository.UserRepository;
-import com.backend.auth_service.util.JwtUtil;
+import com.backend.auth_service.client.AccountsClient;
+import com.backend.auth_service.model.dto.*;
+import com.backend.auth_service.model.domain.UserCredentials;
+import com.backend.auth_service.repository.UserCredentialsRepository;
+
+
+import lombok.extern.log4j.Log4j;
+import lombok.extern.log4j.Log4j2;
+import org.apache.commons.logging.Log;
+import org.slf4j.Logger;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
+
+
 @Service
+@Log4j2
 public class AuthService {
 
-    private final UserRepository userRepository;
+    private final UserCredentialsRepository credentialsRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JwtUtil jwtUtil;
     private final UsersClient usersClient;
+    private final AccountsClient accountsClient;
 
-    public AuthService(UserRepository userRepository,
+    public AuthService(UserCredentialsRepository credentialsRepository,
                        PasswordEncoder passwordEncoder,
-                       JwtUtil jwtUtil,
-                       UsersClient usersClient) {
-        this.userRepository = userRepository;
+                       UsersClient usersClient,
+                       AccountsClient accountsClient) {
+        this.credentialsRepository = credentialsRepository;
         this.passwordEncoder = passwordEncoder;
-        this.jwtUtil = jwtUtil;
         this.usersClient = usersClient;
+        this.accountsClient = accountsClient;
     }
 
-    public String login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
-
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new UnauthorizedException("Credenciales inválidas");
-        }
-
-        return jwtUtil.generateToken(user.getEmail());
-    }
-
+    /**
+     * Registro completo:
+     * 1. Credenciales en auth-service
+     * 2. Perfil en users-service
+     * 3. Cuenta en accounts-service
+     */
     public RegisterResponse register(RegisterRequest request) {
+        // 1. Generar un userId único
+        String userId = UUID.randomUUID().toString();
 
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new IllegalArgumentException("El email ya está registrado");
-        }
+        // 2. Guardar credenciales en auth-service
+        UserCredentials creds = new UserCredentials();
+        creds.setUserId(userId);
+        creds.setEmail(request.getEmail());
+        creds.setPassword(passwordEncoder.encode(request.getPassword()));
+//        creds.setRole("USER");
+        credentialsRepository.save(creds);
 
-        // Guardar credenciales en Auth
-        User user = new User();
-        user.setEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        userRepository.saveAndFlush(user);
+        // 3. Crear perfil en users-service
+        UserProfileRequest userProfile = new UserProfileRequest();
+        userProfile.setUserId(userId);
+        userProfile.setNombre(request.getNombre());
+        userProfile.setApellido(request.getApellido());
+        userProfile.setDni(request.getDni());
+        userProfile.setEmail(request.getEmail());
+        userProfile.setTelefono(request.getTelefono());
 
-        // Crear perfil en Users y obtener alias + CVU
-        RegisterResponse response;
-        try {
-            UserProfileRequest profile = new UserProfileRequest();
-            profile.setUserId(user.getId().toString());
-            profile.setNombre(request.getNombre());
-            profile.setApellido(request.getApellido());
-            profile.setDni(request.getDni());
-            profile.setEmail(request.getEmail());
-            profile.setTelefono(request.getTelefono());
+        log.info("Registrando usuario en users-service: " + userProfile);
 
-            response = usersClient.createUserProfile(profile);
-        } catch (Exception e) {
-            System.err.println(" No se pudo crear perfil en Users-service: " + e.getMessage());
+        usersClient.createUser(userProfile);
 
-            // Si falla Users, devolvemos al menos credenciales básicas
-            response = new RegisterResponse();
-            response.setId(user.getId().toString());
-            response.setEmail(user.getEmail());
-        }
+        // 4. Crear cuenta en accounts-service
+        AccountCreateDTO accountDto = new AccountCreateDTO();
+        accountDto.setUserId(userId);
+        AccountResponseDTO account = accountsClient.createAccount(accountDto);
+
+        // 5. Armar respuesta unificada para el frontend
+        RegisterResponse response = new RegisterResponse();
+        response.setUserId(userId);
+        response.setEmail(request.getEmail());
+        response.setNombre(request.getNombre());
+        response.setApellido(request.getApellido());
+        response.setCvu(account.getCvu());
+        response.setAlias(account.getAlias());
 
         return response;
     }
+
+    /**
+     * Login: valida credenciales y devuelve JWT (simulado por ahora)
+     */
+    public LoginResponse login(LoginRequest request) {
+        UserCredentials creds = credentialsRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("Credenciales inválidas"));
+
+        if (!passwordEncoder.matches(request.getPassword(), creds.getPassword())) {
+            throw new RuntimeException("Credenciales inválidas");
+        }
+
+        // 🔑 Generación de JWT (por ahora simulado)
+        String token = "fake-jwt-token-for-" + creds.getUserId();
+
+        LoginResponse response = new LoginResponse();
+//        response.setUserId(creds.getUserId());
+//        response.setEmail(creds.getEmail());
+        response.setToken(token);
+
+        return response;
+    }
+
+
 
 
 }

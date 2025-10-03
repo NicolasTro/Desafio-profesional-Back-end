@@ -17,11 +17,17 @@ public class UserController {
         this.userService = userService;
     }
 
-    @PostMapping
-    public ResponseEntity<User> createUser(@RequestBody UserProfileRequest request) {
-        User saved = userService.registerUser(request);
+//    @PostMapping(value = {"","/register"})
+@PostMapping
+public ResponseEntity<String> createUser(@RequestBody UserProfileRequest request) {
+    String userId = userService.registerUser(request);
+    return ResponseEntity.status(HttpStatus.CREATED).body(userId);
+}
 
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteUser(@PathVariable String id) {
+        userService.deleteUser(id);
+        return ResponseEntity.noContent().build();
     }
+
 }

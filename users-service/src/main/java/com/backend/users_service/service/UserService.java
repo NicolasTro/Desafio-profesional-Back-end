@@ -3,6 +3,8 @@ package com.backend.users_service.service;
 import com.backend.users_service.model.domain.User;
 import com.backend.users_service.model.dto.UserProfileRequest;
 import com.backend.users_service.repository.UserRepository;
+import lombok.extern.log4j.Log4j2;
+import org.apache.commons.logging.Log;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
@@ -13,6 +15,7 @@ import java.util.Objects;
 import java.util.Random;
 
 @Service
+@Log4j2
 public class UserService {
 
     private final UserRepository userRepository;
@@ -24,29 +27,25 @@ public class UserService {
         this.words = loadWordsFromFile();
     }
 
-    public User registerUser(UserProfileRequest request) {
-        // Validar email único
-        userRepository.findByEmail(request.getEmail())
-                .ifPresent(u -> { throw new RuntimeException("El email ya está registrado"); });
-
-        // Generar CVU
-        String cvu = generateCvu();
-
-        // Generar alias
-        String alias = generateAlias();
-
+    public String registerUser(UserProfileRequest request) {
         User user = User.builder()
-                .id(request.getUserId())
+                .userId(request.getUserId())            // 👈 usar el mismo userId del Saga
                 .nombre(request.getNombre())
                 .apellido(request.getApellido())
                 .dni(request.getDni())
                 .email(request.getEmail())
                 .telefono(request.getTelefono())
-                .cvu(cvu)
-                .alias(alias)
                 .build();
 
-        return userRepository.save(user);
+        userRepository.save(user);
+        return request.getUserId(); // devolver el mismo userId
+    }
+
+    public void deleteUser(String id) {
+        if (!userRepository.existsById(id)) {
+            throw new RuntimeException("Usuario no encontrado");
+        }
+        userRepository.deleteById(id);
     }
 
     private String generateCvu() {
@@ -75,5 +74,10 @@ public class UserService {
             throw new RuntimeException("Error cargando words.txt", e);
         }
     }
+
+
+
+
+
 }
 

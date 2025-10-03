@@ -10,25 +10,12 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class User {
-
     @Id
-    private String id;
+    private String userId; // mismo UUID generado en auth-service
 
     private String nombre;
     private String apellido;
-
-    @Column(unique = true, nullable = false)
     private String dni;
-
-    @Column(unique = true, nullable = false)
     private String email;
-
     private String telefono;
-
-    @Column(unique = true, length = 22)
-    private String cvu;
-
-    @Column(unique = true)
-    private String alias;
 }
-

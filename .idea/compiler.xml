@@ -7,21 +7,29 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="api-gateway" />
         <module name="auth-service" />
+        <module name="cards-service" />
         <module name="users-service" />
+        <module name="api-gateway" />
+        <module name="accounts-service" />
         <module name="eureka-server" />
+        <module name="transactions-service" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="Back-end" target="1.5" />
+      <module name="src" target="21" />
     </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="accounts-service" options="-parameters" />
       <module name="api-gateway" options="-parameters" />
       <module name="auth-service" options="-parameters" />
+      <module name="cards-service" options="-parameters" />
       <module name="eureka-server" options="-parameters" />
+      <module name="src" options="-parameters" />
+      <module name="transactions-service" options="-parameters" />
       <module name="users-service" options="-parameters" />
     </option>
   </component>
