@@ -1,4 +1,4 @@
-package com.backend.accounts_service.config;
+package com.backend.accounts_service.filter;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -16,8 +16,13 @@ import java.util.Collections;
 @Component
 public class InternalKeyFilter extends OncePerRequestFilter {
 
+    /** Clave interna para validar requests entre microservicios */
+
     @Value("${internal.api.key}")
     private String internalApiKey;
+
+
+    /** Filtra las requests entrantes para validar la clave interna */
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -27,22 +32,30 @@ public class InternalKeyFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
 
-        // Rutas públicas (no deben validar la clave interna)
-        if (path.startsWith("/auth/register")
-                || path.startsWith("/auth/login")
-                || path.startsWith("/swagger-ui")
+
+        if (path.startsWith("/swagger-ui")
                 || path.startsWith("/v3/api-docs")
-                || path.startsWith("/actuator")) {
+                || path.startsWith("/api-docs")
+                || path.startsWith("/actuator")
+                || path.startsWith("/error")) {
             filterChain.doFilter(request, response);
             return;
         }
 
+
+        if (path.startsWith("/auth/register") || path.startsWith("/auth/login")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // 🔒 Validar clave interna
         String key = request.getHeader("X-Internal-Key");
         if (key == null || !key.trim().equals(internalApiKey.trim())) {
             System.out.println("🚫 Clave interna inválida o ausente: " + key);
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden");
             return;
         }
+
 
         // ✅ Clave válida → marcar la request como autenticada
         var auth = new UsernamePasswordAuthenticationToken(

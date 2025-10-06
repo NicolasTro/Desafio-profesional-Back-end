@@ -15,9 +15,9 @@ import lombok.NoArgsConstructor;
 @Builder
 public class CardRequestDTO {
 
-    private String accountId;     // CVU o identificador de la cuenta asociada
-    private String type;          // Tipo de tarjeta: CREDIT / DEBIT / PREPAID
-    private String provider;      // Proveedor: VISA / MASTERCARD / AMEX, etc.
-    private String cardNumber;  // Número enmascarado (**** **** **** 1234)
-    private String expiration;    // Fecha de vencimiento (MM/YY o MM/YYYY)
+    private String accountId;
+    private String type;
+    private String provider;
+    private String cardNumber;
+    private String expiration;
 }

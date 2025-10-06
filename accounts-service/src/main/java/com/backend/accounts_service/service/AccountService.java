@@ -172,6 +172,9 @@ public class AccountService {
         }
     }
 
+    /** Extraer mensaje de error de la respuesta JSON
+     */
+
     private String extractErrorMessage(String json) {
         try {
             Map<String, String> map = new ObjectMapper().readValue(json, Map.class);
@@ -271,15 +274,15 @@ public class AccountService {
     /**
      * Obtener todas las transacciones de una cuenta
      */
-    public List<TransactionResponseDTO> getAccountTransactions(String cvu) {
-        return transactionsClient.getAllTransactions(cvu);
+    public List<TransactionResponseDTO> getAccountTransactions(String accountId) {
+        return transactionsClient.getAllTransactions(accountId);
     }
 
     /**
      * Obtener los últimos 5 movimientos
      */
-    public List<TransactionResponseDTO> getLast5Transactions(String cvu) {
-        return transactionsClient.getLast5Transactions(cvu);
+    public List<TransactionResponseDTO> getLast5Transactions(String accountId) {
+        return transactionsClient.getLast5Transactions(accountId);
     }
 
 

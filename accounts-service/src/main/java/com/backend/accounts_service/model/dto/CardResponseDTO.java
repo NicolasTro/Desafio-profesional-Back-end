@@ -15,10 +15,10 @@ import lombok.NoArgsConstructor;
 @Builder
 public class CardResponseDTO {
 
-    private String id;            // UUID de la tarjeta
-    private String accountId;     // CVU o identificador de cuenta asociada
-    private String type;          // Tipo de tarjeta: CREDIT / DEBIT / PREPAID
-    private String provider;      // Proveedor: VISA / MASTERCARD / AMEX, etc.
-    private String numberMasked;  // Número enmascarado (**** **** **** 1234)
-    private String expiration;    // Fecha de vencimiento (MM/YY o MM/YYYY)
+    private String id;
+    private String accountId;
+    private String type;
+    private String provider;
+    private String numberMasked;
+    private String expiration;
 }

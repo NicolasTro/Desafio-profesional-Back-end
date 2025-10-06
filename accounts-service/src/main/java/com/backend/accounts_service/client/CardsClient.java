@@ -24,13 +24,18 @@ public interface CardsClient {
     @PostMapping("/cards/{cvu}")
     CardResponseDTO addCard(@PathVariable("cvu") String cvu, @RequestBody CardRequestDTO request);
 
+    /**
+     * Obtener una tarjeta específica asociada a un CVU.
+     */
 
-    // 🔹 Nuevo método para obtener una tarjeta específica
     @GetMapping("/cards/{cvu}/{cardId}")
-    CardResponseDTO getCardById(@PathVariable("cvu") String cvu,@PathVariable("cardId") String cardId);
+    CardResponseDTO getCardById(@PathVariable("cvu") String cvu, @PathVariable("cardId") String cardId);
 
-    // 🔹 Nuevo endpoint DELETE
+    /**
+     * Eliminar una tarjeta específica asociada a un CVU.
+     */
+
     @DeleteMapping("/cards/{cvu}/{cardId}")
-    void deleteCard(@PathVariable("cvu") String cvu,@PathVariable("cardId") String cardId);
+    void deleteCard(@PathVariable("cvu") String cvu, @PathVariable("cardId") String cardId);
 
 }

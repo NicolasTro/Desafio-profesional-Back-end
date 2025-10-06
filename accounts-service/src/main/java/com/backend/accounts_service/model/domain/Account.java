@@ -16,17 +16,17 @@ public class Account {
     private String id;
 
     @Column(nullable = false, unique = true)
-    private String userId; // referencia al usuario dueño de la cuenta
+    private String userId;
 
     @Column(nullable = false, unique = true, length = 22)
-    private String cvu; // ya generado en users-service
+    private String cvu;
 
     @Column(nullable = false, unique = true)
-    private String alias; // ya generado en users-service
+    private String alias;
 
     @Column(nullable = false)
-    private Double balance = 0.0; // saldo inicial
+    private Double balance = 0.0;
 
     @Column(nullable = false)
-    private String currency = "ARS"; // moneda por defecto
+    private String currency = "ARS";
 }
