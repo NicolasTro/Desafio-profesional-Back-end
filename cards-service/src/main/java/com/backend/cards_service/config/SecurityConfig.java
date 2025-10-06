@@ -1,5 +1,6 @@
 package com.backend.cards_service.config;
 
+import com.backend.cards_service.filter.InternalKeyFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -14,13 +15,13 @@ public class SecurityConfig {
         http.csrf(csrf -> csrf.disable());
 
         http.authorizeHttpRequests(auth -> auth
-                // Endpoints públicos (documentación, health)
-                .requestMatchers("/actuator/health", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+
+                .requestMatchers("/swagger-ui/**","/swagger-ui.html", "/v3/api-docs/**", "/api-docs/**", "/actuator/**").permitAll()
 
                 // ✅ Endpoints internos del servicio (validados por X-Internal-Key)
                 .requestMatchers("/cards/**").permitAll()
 
-                // Todo lo demás requeriría JWT si se implementara
+
                 .anyRequest().authenticated()
         );
 

@@ -1,4 +1,4 @@
-package com.backend.cards_service.config;
+package com.backend.cards_service.filter;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -56,6 +56,7 @@ public class InternalKeyFilter extends OncePerRequestFilter {
     private boolean isPublicPath(String path) {
         return path.startsWith("/actuator/health")
                 || path.startsWith("/swagger-ui")
+                || path.startsWith("/api-docs")
                 || path.startsWith("/v3/api-docs");
     }
 }

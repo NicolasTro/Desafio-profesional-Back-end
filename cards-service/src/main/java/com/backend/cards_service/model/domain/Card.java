@@ -20,13 +20,13 @@ public class Card {
     private String accountId;
 
     @Column(nullable = false)
-    private String type; // CREDIT o DEBIT
+    private String type;
 
     @Column(nullable = false, unique = true)
-    private String number; // Ejemplo: **** **** **** 1234
+    private String number;
 
     @Column(nullable = false)
-    private String provider; // VISA, MasterCard, Amex
+    private String provider;
 
     @Column(nullable = false)
     private String expiration;
