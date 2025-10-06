@@ -36,6 +36,14 @@ public class SecurityConfig {
                 .build();
     }
 
+
+    /**
+     * Configures the ReactiveJwtDecoder based on the provided properties.
+     * If 'security.jwt.jwk-set-uri' is set, it uses that URI to fetch the JWKS.
+     * If 'security.jwt.secret' is set, it uses that secret for HMAC decoding.
+     * If neither is set, it throws an IllegalStateException.
+     */
+
     @Bean
     public ReactiveJwtDecoder jwtDecoder() {
         if (jwkSetUri != null && !jwkSetUri.isEmpty()) {

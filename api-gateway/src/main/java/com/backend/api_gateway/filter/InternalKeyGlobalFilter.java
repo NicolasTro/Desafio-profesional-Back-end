@@ -16,6 +16,13 @@ public class InternalKeyGlobalFilter implements GlobalFilter, Ordered {
     @Value("${internal.api.key}")
     private String internalApiKey;
 
+    /**
+     * Este filtro añade un encabezado "X-Internal-Key" con una clave interna
+     * a todas las solicitudes que no sean de autenticación.
+     * Esto permite que los microservicios verifiquen que la solicitud proviene
+     * del API Gateway.
+     */
+
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getURI().getPath();
