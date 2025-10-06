@@ -20,8 +20,18 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Endpoints públicos
                         .requestMatchers("/auth/register", "/auth/login").permitAll()
-                        // Documentación y salud
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/actuator/**").permitAll()
+
+                        /** Documentación de Swagger */
+
+                        .requestMatchers(
+                                "/auth/register",
+                                "/auth/login",
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/api-docs/**",
+                                "/actuator/**"
+                        ).permitAll()
                         // Todo lo demás requiere JWT
                         .anyRequest().authenticated()
                 );

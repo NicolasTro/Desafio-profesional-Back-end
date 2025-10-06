@@ -70,6 +70,6 @@ public class AuthService {
      */
     public void logout(String token) {
         log.info("Logout recibido. Token: {}", token);
-        // Opcional: implementar invalidación (lista negra, expiración, etc.)
+
     }
 }

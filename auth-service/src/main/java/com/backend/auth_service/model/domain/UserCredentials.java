@@ -18,7 +18,7 @@ public class UserCredentials {
     private String id;
 
     @Column(nullable = false, unique = true)
-    private String userId;  // referencia al perfil en users-service
+    private String userId;
 
     @Column(nullable = false, unique = true)
     private String email;
@@ -26,6 +26,5 @@ public class UserCredentials {
     @Column(nullable = false)
     private String password;
 
-//    @Column(nullable = false)
-//    private String role; // USER o ADMIN
+
 }

@@ -13,5 +13,5 @@ public class RegisterRequest {
     private String dni;
     private String email;
     private String telefono;
-    private String password;  // 👈 este campo solo se usa en auth-service
+    private String password;
 }
