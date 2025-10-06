@@ -21,7 +21,7 @@ public class RegisterResponse {
     private String email;
     private String telefono;
     private String dni;
-    // Estos campos se completan más adelante por account-service
+
     private String cvu;
     private String alias;
 }

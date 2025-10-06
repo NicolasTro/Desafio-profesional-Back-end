@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Log4j2
-//@RequiredArgsConstructor
+
 public class UserService {
 
     private final UserRepository userRepository;
@@ -39,7 +39,7 @@ public class UserService {
         }
 
 
-        log.info("asdasdasdasd");
+        log.info("Entro en Register del UserService");
         User user = User.builder()
                 .userId(request.getUserId())
                 .nombre(request.getNombre())

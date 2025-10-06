@@ -8,6 +8,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 @FeignClient(name = "ACCOUNTS-SERVICE")
 public interface AccountsClient {
 
+
+    /** Obtener cuenta por userId
+     */
     @GetMapping("/accounts/user/{userId}")
     AccountResponseDTO getAccountByUserId(@PathVariable("userId") String userId);
+
 }
