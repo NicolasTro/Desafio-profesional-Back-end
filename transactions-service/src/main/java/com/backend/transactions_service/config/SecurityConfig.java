@@ -13,11 +13,11 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http, InternalKeyFilter internalKeyFilter) throws Exception {
         http.csrf(csrf -> csrf.disable());
         http.authorizeHttpRequests(auth -> auth
-                .requestMatchers("/actuator/health", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                .requestMatchers("/actuator/health", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/api-docs/**", "/transactions/**").permitAll()
                 .anyRequest().authenticated()
         );
         http.addFilterBefore(internalKeyFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
         return http.build();
-        // Nota: no configuramos resourceServer aquí. La validación JWT es solo en el Gateway.
+
     }
 }

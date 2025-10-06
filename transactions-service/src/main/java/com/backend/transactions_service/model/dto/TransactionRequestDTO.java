@@ -6,11 +6,11 @@ import java.time.LocalDateTime;
 
 @Data
 public class TransactionRequestDTO {
-    private String accountId;   // CVU de la cuenta que registra la transacción
+    private String accountId;
     private Double amount;
     private LocalDateTime dated;
     private String description;
-    private String origin;      // CVU origen
-    private String destination; // CVU destino
-    private TransactionType type;        // CREDIT | DEBIT | TRANSFER
+    private String origin;
+    private String destination;
+    private TransactionType type;
 }

@@ -23,8 +23,8 @@ public class InternalKeyFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
 
-        // Dejar pasar endpoints públicos (si los hubiera)
-        if (path.startsWith("/actuator/health") || path.startsWith("/swagger-ui") || path.startsWith("/v3/api-docs")) {
+
+        if (path.startsWith("/actuator/health") || path.startsWith("/swagger-ui") || path.startsWith("/v3/api-docs") || path.startsWith("/api-docs")) {
             filterChain.doFilter(request, response);
             return;
         }

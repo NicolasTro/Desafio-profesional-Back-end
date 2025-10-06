@@ -17,7 +17,7 @@ public class Transaction {
     private String id;
 
     @Column(nullable = false)
-    private String accountId; // CVU de la cuenta asociada a esta transacción
+    private String accountId;
 
     @Column(nullable = false)
     private Double amount;
@@ -28,11 +28,11 @@ public class Transaction {
     private String description;
 
     @Column(nullable = false)
-    private String origin; // CVU origen
+    private String origin;
 
     @Column(nullable = false)
-    private String destination; // CVU destino
+    private String destination;
 
     @Enumerated(EnumType.STRING)
-    private TransactionType type; // CREDIT | DEBIT | TRANSFER
+    private TransactionType type;
 }

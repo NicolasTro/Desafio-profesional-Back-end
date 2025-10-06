@@ -28,8 +28,8 @@ public class TransactionService {
     /**
      * Obtener últimos 5 movimientos por CVU
      */
-    public List<TransactionResponseDTO> findLast5ByCvu(String cvu) {
-        return transactionRepository.findLast5ByCvu(cvu)
+    public List<TransactionResponseDTO> findLast5ByAccountId(String accountId) {
+        return transactionRepository.findLast5ByAccountId(accountId)
                 .stream()
                 .map(this::toResponseDTO)
                 .collect(Collectors.toList());
@@ -38,8 +38,8 @@ public class TransactionService {
     /**
      * Buscar todas las transacciones asociadas a un CVU
      */
-    public List<TransactionResponseDTO> findAllByCvu(String cvu) {
-        List<Transaction> transactions = transactionRepository.findByAccountCvu(cvu);
+    public List<TransactionResponseDTO> findAllByAccountId(String accountId) {
+        List<Transaction> transactions = transactionRepository.findByAccountId(accountId);
 
         return transactions.stream()
                 .map(this::toResponseDTO)
