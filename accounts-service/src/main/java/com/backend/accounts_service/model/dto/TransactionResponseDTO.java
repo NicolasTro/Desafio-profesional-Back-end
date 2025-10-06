@@ -5,7 +5,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-public class TransactionSummaryDTO {
+public class TransactionResponseDTO {
     private String id;
     private String accountId;   // CVU de la cuenta
     private Double amount;

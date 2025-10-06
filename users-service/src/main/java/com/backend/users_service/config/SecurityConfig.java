@@ -1,18 +1,20 @@
 package com.backend.users_service.config;
 
+//import com.backend.users_service.filter.InternalKeyFilter;
+import com.backend.users_service.filter.InternalKeyFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 public class SecurityConfig {
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+    private final InternalKeyFilter internalKeyFilter;
+
+    public SecurityConfig(InternalKeyFilter internalKeyFilter) {
+        this.internalKeyFilter = internalKeyFilter;
     }
 
     @Bean
@@ -20,21 +22,13 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/users/**").permitAll()
-                        .requestMatchers(
-                                "/swagger-ui.html",
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/api-docs/**"
-                        ).permitAll()
+                        // Documentación y salud
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/actuator/**").permitAll()
+                        // Todo lo demás requiere autenticación interna o JWT
                         .anyRequest().authenticated()
-                );
+                )
+                .addFilterBefore(internalKeyFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
-
-
-
-
-
 }

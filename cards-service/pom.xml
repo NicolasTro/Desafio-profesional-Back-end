@@ -12,7 +12,7 @@
     </parent>
 
     <artifactId>cards-service</artifactId>
-    <name>Cards Service</name>
+    <name>cards Service</name>
     <packaging>jar</packaging>
 
     <dependencies>
@@ -68,6 +68,14 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-config</artifactId>
         </dependency>
     </dependencies>
 

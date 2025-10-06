@@ -1,35 +1,47 @@
 package com.backend.users_service.service;
 
+import com.backend.users_service.client.AccountsClient;
+import com.backend.users_service.exception.ValidationException;
 import com.backend.users_service.model.domain.User;
+import com.backend.users_service.model.dto.AccountResponseDTO;
 import com.backend.users_service.model.dto.UserProfileRequest;
+import com.backend.users_service.model.dto.RegisterResponse;
 import com.backend.users_service.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.logging.Log;
 import org.springframework.stereotype.Service;
-
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.security.SecureRandom;
-import java.util.List;
-import java.util.Objects;
-import java.util.Random;
 
 @Service
 @Log4j2
+//@RequiredArgsConstructor
 public class UserService {
 
     private final UserRepository userRepository;
-    private final Random random = new SecureRandom();
-    private final List<String> words;
+    private final AccountsClient accountsClient;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, AccountsClient accountsClient) {
         this.userRepository = userRepository;
-        this.words = loadWordsFromFile();
+
+        this.accountsClient = accountsClient;
     }
 
-    public String registerUser(UserProfileRequest request) {
+    /**
+     * Registra un nuevo usuario a partir de la información enviada por auth-service.
+     * El userId ya fue generado en auth-service.
+     */
+    public RegisterResponse register(UserProfileRequest request) {
+        if (userRepository.existsById(request.getUserId())) {
+            throw new RuntimeException("El usuario con ID " + request.getUserId() + " ya existe");
+        }
+
+        if (userRepository.existsByDni(request.getDni())) {
+            throw new ValidationException("El DNI  " + request.getDni() + " ya existe");
+        }
+
+
+        log.info("asdasdasdasd");
         User user = User.builder()
-                .userId(request.getUserId())            // 👈 usar el mismo userId del Saga
+                .userId(request.getUserId())
                 .nombre(request.getNombre())
                 .apellido(request.getApellido())
                 .dni(request.getDni())
@@ -37,47 +49,72 @@ public class UserService {
                 .telefono(request.getTelefono())
                 .build();
 
-        userRepository.save(user);
-        return request.getUserId(); // devolver el mismo userId
+        User saved = userRepository.save(user);
+        log.info("Usuario registrado correctamente: {} {}", saved.getNombre(), saved.getApellido());
+
+        return RegisterResponse.builder()
+                .userId(saved.getUserId())
+                .nombre(saved.getNombre())
+                .apellido(saved.getApellido())
+                .dni(saved.getDni())
+                .email(saved.getEmail())
+                .telefono(saved.getTelefono())
+                .build();
     }
 
+    public RegisterResponse getUserById(String id) {
+        var user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        // 🔹 Obtener datos de la cuenta desde accounts-service
+        AccountResponseDTO account = accountsClient.getAccountByUserId(user.getUserId());
+
+        return RegisterResponse.builder()
+                .userId(user.getUserId())
+                .nombre(user.getNombre())
+                .apellido(user.getApellido())
+                .dni(user.getDni())
+                .email(user.getEmail())
+                .telefono(user.getTelefono())
+                .cvu(account.getCvu())
+                .alias(account.getAlias())
+                .build();
+    }
+
+    /**
+     * Actualiza la información básica del usuario.
+     */
+    public RegisterResponse updateUser(String id, UserProfileRequest request) {
+        User existing = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con id: " + id));
+
+        existing.setNombre(request.getNombre());
+        existing.setApellido(request.getApellido());
+        existing.setDni(request.getDni());
+        existing.setEmail(request.getEmail());
+        existing.setTelefono(request.getTelefono());
+
+        User updated = userRepository.save(existing);
+        log.info("Usuario actualizado: {} {}", updated.getNombre(), updated.getApellido());
+
+        return RegisterResponse.builder()
+                .userId(updated.getUserId())
+                .nombre(updated.getNombre())
+                .apellido(updated.getApellido())
+                .dni(updated.getDni())
+                .email(updated.getEmail())
+                .telefono(updated.getTelefono())
+                .build();
+    }
+
+    /**
+     * Elimina al usuario por ID (usado en rollback o mantenimiento interno).
+     */
     public void deleteUser(String id) {
         if (!userRepository.existsById(id)) {
             throw new RuntimeException("Usuario no encontrado");
         }
         userRepository.deleteById(id);
+        log.info("Usuario eliminado con id: {}", id);
     }
-
-    private String generateCvu() {
-        StringBuilder sb = new StringBuilder(22);
-        for (int i = 0; i < 22; i++) {
-            sb.append(random.nextInt(10));
-        }
-        return sb.toString();
-    }
-
-    private String generateAlias() {
-        if (words.isEmpty()) {
-            throw new RuntimeException("No hay palabras disponibles en words.txt");
-        }
-        return words.get(random.nextInt(words.size())) + "." +
-                words.get(random.nextInt(words.size())) + "." +
-                words.get(random.nextInt(words.size()));
-    }
-
-    private List<String> loadWordsFromFile() {
-        try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(Objects.requireNonNull(
-                        getClass().getClassLoader().getResourceAsStream("words.txt"))))) {
-            return reader.lines().map(String::trim).filter(s -> !s.isEmpty()).toList();
-        } catch (Exception e) {
-            throw new RuntimeException("Error cargando words.txt", e);
-        }
-    }
-
-
-
-
-
 }
-

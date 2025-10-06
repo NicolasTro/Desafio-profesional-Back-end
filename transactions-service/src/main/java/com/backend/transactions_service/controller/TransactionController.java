@@ -18,12 +18,15 @@ public class TransactionController {
         this.transactionService = transactionService;
     }
 
-    /**
-     * Obtener los últimos 5 movimientos de una cuenta (por CVU)
-     */
-    @GetMapping("/accounts/{cvu}")
-    public ResponseEntity<List<TransactionResponseDTO>> getLast5(@PathVariable String cvu) {
-        return ResponseEntity.ok(transactionService.getLast5Transactions(cvu));
+
+    @GetMapping("/account/{cvu}")
+    public ResponseEntity<List<TransactionResponseDTO>> getAllByAccount(@PathVariable String cvu) {
+        return ResponseEntity.ok(transactionService.findAllByCvu(cvu));
+    }
+
+    @GetMapping("/account/{cvu}/last5")
+    public ResponseEntity<List<TransactionResponseDTO>> getLast5ByAccount(@PathVariable String cvu) {
+        return ResponseEntity.ok(transactionService.findLast5ByCvu(cvu));
     }
 
     /**
@@ -34,4 +37,8 @@ public class TransactionController {
             @RequestBody TransactionRequestDTO request) {
         return ResponseEntity.ok(transactionService.saveTransaction(request));
     }
+
+
+
+
 }

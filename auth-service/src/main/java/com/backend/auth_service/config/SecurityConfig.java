@@ -13,22 +13,16 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/login").permitAll()
-                        .requestMatchers("/auth/logout").permitAll()
-                        .requestMatchers("/auth/register").permitAll()
-                        .requestMatchers(
-                                "/swagger-ui.html",
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/api-docs/**"
-                        ).permitAll()
-
+                        // Endpoints públicos
+                        .requestMatchers("/auth/register", "/auth/login").permitAll()
+                        // Documentación y salud
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/actuator/**").permitAll()
+                        // Todo lo demás requiere JWT
                         .anyRequest().authenticated()
                 );
 

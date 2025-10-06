@@ -3,13 +3,14 @@ package com.backend.cards_service.controller;
 import com.backend.cards_service.model.dto.CardRequestDTO;
 import com.backend.cards_service.model.dto.CardResponseDTO;
 import com.backend.cards_service.service.CardService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/accounts/{cvu}/cards")
+@RequestMapping("/cards")
 public class CardController {
 
     private final CardService cardService;
@@ -21,7 +22,7 @@ public class CardController {
     /**
      * Obtener todas las tarjetas asociadas a un CVU
      */
-    @GetMapping
+    @GetMapping("/{cvu}/cards")
     public ResponseEntity<List<CardResponseDTO>> getCards(@PathVariable String cvu) {
         return ResponseEntity.ok(cardService.getCardsByCvu(cvu));
     }
@@ -29,7 +30,7 @@ public class CardController {
     /**
      * Obtener una tarjeta específica por CVU + cardId
      */
-    @GetMapping("/{cardId}")
+    @GetMapping("/{cvu}/{cardId}")
     public ResponseEntity<CardResponseDTO> getCard(
             @PathVariable String cvu,
             @PathVariable String cardId) {
@@ -39,7 +40,7 @@ public class CardController {
     /**
      * Agregar nueva tarjeta a un CVU
      */
-    @PostMapping
+    @PostMapping("/{cvu}")
     public ResponseEntity<CardResponseDTO> addCard(
             @PathVariable String cvu,
             @RequestBody CardRequestDTO request) {
@@ -50,11 +51,12 @@ public class CardController {
     /**
      * Eliminar tarjeta por CVU + cardId
      */
-    @DeleteMapping("/{cardId}")
+    @DeleteMapping("/{cvu}/{cardId}")
     public ResponseEntity<Void> deleteCard(
             @PathVariable String cvu,
             @PathVariable String cardId) {
         cardService.deleteCard(cvu, cardId);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.status(HttpStatus.OK).build();
+//                .ok().build();
     }
 }

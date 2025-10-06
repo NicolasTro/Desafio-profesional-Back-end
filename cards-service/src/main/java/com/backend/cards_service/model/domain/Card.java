@@ -23,7 +23,7 @@ public class Card {
     private String type; // CREDIT o DEBIT
 
     @Column(nullable = false, unique = true)
-    private String numberMasked; // Ejemplo: **** **** **** 1234
+    private String number; // Ejemplo: **** **** **** 1234
 
     @Column(nullable = false)
     private String provider; // VISA, MasterCard, Amex
