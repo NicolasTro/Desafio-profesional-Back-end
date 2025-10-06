@@ -1,22 +1,37 @@
 package com.backend.accounts_service.service;
 
+
 import com.backend.accounts_service.client.TransactionsClient;
 import com.backend.accounts_service.client.CardsClient;
+import com.backend.accounts_service.exception.ResourceNotFoundException;
 import com.backend.accounts_service.model.domain.Account;
 import com.backend.accounts_service.model.dto.*;
 import com.backend.accounts_service.repository.AccountRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import feign.FeignException;
+import jakarta.persistence.EntityNotFoundException;
+import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.*;
 
 @Service
+@Log4j2
 public class AccountService {
 
     private final AccountRepository accountRepository;
     private final TransactionsClient transactionsClient;
     private final CardsClient cardsClient;
+    private final List<String> wordList;
+    @Value("${internal.api.key}")
+    private String internalApiKey;
+
 
     public AccountService(AccountRepository accountRepository,
                           TransactionsClient transactionsClient,
@@ -24,6 +39,7 @@ public class AccountService {
         this.accountRepository = accountRepository;
         this.transactionsClient = transactionsClient;
         this.cardsClient = cardsClient;
+        wordList = loadWords();
     }
 
     /**
@@ -35,11 +51,13 @@ public class AccountService {
         if (existing.isPresent()) {
             throw new RuntimeException("El usuario ya tiene una cuenta asociada");
         }
+        log.info("llego a account");
+
 
         Account account = Account.builder()
                 .userId(dto.getUserId())             // 👈 usar el mismo userId del Saga
                 .cvu(generateCvu())
-                .alias(generateAlias(dto.getUserId()))
+                .alias(generateAlias())
                 .balance(0.0)
                 .currency("ARS")
                 .build();
@@ -52,10 +70,44 @@ public class AccountService {
      * Obtener cuenta por CVU
      */
     public AccountResponseDTO getAccountByCvu(String cvu) {
-        Account account = accountRepository.findByCvu(cvu)
-                .orElseThrow(() -> new RuntimeException("Cuenta no encontrada"));
-        return toResponseDTO(account);
+        Optional<Account> account = accountRepository.findByCvu(cvu);
+        if (account.isEmpty()) {
+            throw new ResourceNotFoundException("Cuenta no encontrada");
+        }
+
+        AccountResponseDTO dto = new AccountResponseDTO();
+        dto.setId(account.get().getId());
+        dto.setUserId(account.get().getUserId());
+        dto.setCvu(account.get().getCvu());
+        dto.setAlias(account.get().getAlias());
+        dto.setBalance(account.get().getBalance());
+        dto.setCurrency(account.get().getCurrency());
+
+        return dto;
     }
+
+
+    /**
+     * Obtener cuenta por CVU
+     */
+    public AccountResponseDTO getAccountByUserId(String userId) {
+        Optional<Account> account = accountRepository.findByUserId(userId);
+        if (account.isEmpty()) {
+            throw new ResourceNotFoundException("Cuenta no encontrada");
+        }
+
+        AccountResponseDTO dto = new AccountResponseDTO();
+        dto.setId(account.get().getId());
+        dto.setUserId(account.get().getUserId());
+        dto.setCvu(account.get().getCvu());
+        dto.setAlias(account.get().getAlias());
+        dto.setBalance(account.get().getBalance());
+        dto.setCurrency(account.get().getCurrency());
+
+        return dto;
+    }
+
+
 
     /**
      * Actualizar alias o currency de la cuenta
@@ -70,14 +122,6 @@ public class AccountService {
         return toResponseDTO(accountRepository.save(account));
     }
 
-    /**
-     * Obtener últimos 5 movimientos de la cuenta (via transactions-service)
-     */
-    public List<TransactionSummaryDTO> getLast5Transactions(String cvu) {
-        accountRepository.findByCvu(cvu)
-                .orElseThrow(() -> new RuntimeException("Cuenta no encontrada"));
-        return transactionsClient.getLast5Transactions(cvu);
-    }
 
     /**
      * Obtener tarjetas asociadas a la cuenta (via cards-service)
@@ -87,6 +131,64 @@ public class AccountService {
                 .orElseThrow(() -> new RuntimeException("Cuenta no encontrada"));
         return cardsClient.getCardsByAccount(cvu);
     }
+
+
+    /**
+     * Agregar una tarjeta nueva asociada a un CVU.
+     */
+    public CardResponseDTO addCard(String cvu, CardRequestDTO request) {
+        request.setAccountId(cvu);
+
+        try {
+            return cardsClient.addCard(cvu, request);
+
+        } catch (feign.FeignException.BadRequest e) {
+            throw new RuntimeException("Datos inválidos al registrar la tarjeta: " + e.contentUTF8());
+
+        } catch (feign.FeignException.Conflict e) {
+            throw new RuntimeException("La tarjeta ya está asociada a otra cuenta: " + e.contentUTF8());
+
+        } catch (feign.FeignException.InternalServerError e) {
+            throw new RuntimeException("Error interno en cards-service: " + e.contentUTF8());
+
+        } catch (feign.FeignException e) {
+            throw new RuntimeException("Error al comunicarse con cards-service: " + e.getMessage());
+        }
+    }
+
+
+    /**
+     * Obtener una tarjeta específica por CVU + cardId
+     */
+    public CardResponseDTO getCardById(String cvu, String cardId) {
+        try {
+
+            return cardsClient.getCardById(cvu, cardId);
+
+        } catch (FeignException e) {
+            String errorMessage = extractErrorMessage(e.contentUTF8());
+            throw new ResponseStatusException(
+                    HttpStatus.valueOf(e.status()), errorMessage);
+        }
+    }
+
+    private String extractErrorMessage(String json) {
+        try {
+            Map<String, String> map = new ObjectMapper().readValue(json, Map.class);
+            return map.getOrDefault("error", "Error desconocido");
+        } catch (Exception ex) {
+            return "Error al procesar la respuesta";
+        }
+    }
+
+
+    /**
+     * Eliminar una tarjeta específica por CVU + cardId
+     */
+    public void deleteCard(String cvu, String cardId) {
+        cardsClient.deleteCard(cvu, cardId);
+    }
+
 
     /**
      * Actualizar balance de la cuenta (usado desde transactions-service)
@@ -120,8 +222,30 @@ public class AccountService {
         return cvu.toString();
     }
 
-    private String generateAlias(String userId) {
-        return "alias." + userId.substring(0, 5).toLowerCase();
+    private String generateAlias() {
+        if (wordList.isEmpty()) {
+            return "alias.default.error";
+        }
+        Random random = new Random();
+        String w1 = wordList.get(random.nextInt(wordList.size()));
+        String w2 = wordList.get(random.nextInt(wordList.size()));
+        String w3 = wordList.get(random.nextInt(wordList.size()));
+        return String.format("%s.%s.%s", w1, w2, w3).toLowerCase();
+    }
+
+    private List<String> loadWords() {
+        List<String> words = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(Objects.requireNonNull(
+                        getClass().getClassLoader().getResourceAsStream("words.txt"))))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (!line.isBlank()) words.add(line.trim());
+            }
+        } catch (IOException | NullPointerException e) {
+            log.error("Error al cargar word.txt", e);
+        }
+        return words;
     }
 
     private AccountResponseDTO toResponseDTO(Account account) {
@@ -143,6 +267,20 @@ public class AccountService {
         accountRepository.deleteById(id);
     }
 
+
+    /**
+     * Obtener todas las transacciones de una cuenta
+     */
+    public List<TransactionResponseDTO> getAccountTransactions(String cvu) {
+        return transactionsClient.getAllTransactions(cvu);
+    }
+
+    /**
+     * Obtener los últimos 5 movimientos
+     */
+    public List<TransactionResponseDTO> getLast5Transactions(String cvu) {
+        return transactionsClient.getLast5Transactions(cvu);
+    }
 
 
 }
