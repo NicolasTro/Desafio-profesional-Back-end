@@ -444,3 +444,67 @@ A continuación se registran, por cada caso, solo los campos solicitados: Fecha 
   - Ejecutor: Nicolas Troupkos
   - Observaciones: Ejecutado vía Maven. Tests run: 7, Failures: 0. Recomendado: añadir test que load-e `words.txt` vacío desde resources para cubrir definitivamente este caso.
 
+
+- ID: ACC-01
+  - Fecha de ejecucion: 2025-10-08
+  - Estado de ejecucion: PASADO
+  - Resultado obtenido: 200 OK; cuenta creada con cvu
+  - Suite: AccountsIntegrationTest (integration)
+  - Entorno: test
+  - Ejecutor: Nicolas Troupkos
+  - Observaciones: Ejecutado en mvn full reactor; tests pass.
+
+- ID: ACC-02
+  - Fecha de ejecucion: 2025-10-08
+  - Estado de ejecucion: PASADO
+  - Resultado obtenido: 200 OK; datos de la cuenta devueltos
+  - Suite: AccountsIntegrationTest (integration)
+  - Entorno: test
+  - Ejecutor: Nicolas Troupkos
+  - Observaciones: Ejecutado en mvn full reactor; tests pass.
+
+- ID: ACC-03
+  - Fecha de ejecucion: 2025-10-08
+  - Estado de ejecucion: PASADO
+  - Resultado obtenido: 200 OK; lista de cuentas devuelta
+  - Suite: AccountsIntegrationTest (integration)
+  - Entorno: test
+  - Ejecutor: Nicolas Troupkos
+  - Observaciones: Ejecutado en mvn full reactor; tests pass.
+
+- ID: CARD-01
+  - Fecha de ejecucion: 2025-10-08
+  - Estado de ejecucion: PASADO
+  - Resultado obtenido: 200 OK; lista de tarjetas devuelta
+  - Suite: CardControllerTest (unit) / SmokeTest (cards-service)
+  - Entorno: test
+  - Ejecutor: Nicolas Troupkos
+  - Observaciones: Ejecutado en mvn full reactor; tests pass.
+
+- ID: CARD-02
+  - Fecha de ejecucion: 2025-10-08
+  - Estado de ejecucion: PASADO
+  - Resultado obtenido: 200 OK; tarjeta creada
+  - Suite: CardControllerTest (unit)
+  - Entorno: test
+  - Ejecutor: Nicolas Troupkos
+  - Observaciones: Ejecutado en mvn full reactor; tests pass.
+
+- ID: TRANS-01
+  - Fecha de ejecucion: 2025-10-08
+  - Estado de ejecucion: PASADO
+  - Resultado obtenido: 200 OK; lista de transacciones devuelta
+  - Suite: TransactionControllerTest (unit)
+  - Entorno: test
+  - Ejecutor: Nicolas Troupkos
+  - Observaciones: Ejecutado en mvn full reactor; tests pass.
+
+- ID: TRANS-02
+  - Fecha de ejecucion: 2025-10-08
+  - Estado de ejecucion: PASADO
+  - Resultado obtenido: 200 OK; transaccion creada
+  - Suite: TransactionServiceTest (unit)
+  - Entorno: test
+  - Ejecutor: Nicolas Troupkos
+  - Observaciones: Ejecutado en mvn full reactor; tests pass.
+
