@@ -2,6 +2,7 @@ package com.backend.auth_service.service;
 
 import com.backend.auth_service.exception.ResourceNotFoundException;
 import com.backend.auth_service.exception.ValidationException;
+import com.backend.auth_service.exception.UnauthorizedException;
 import com.backend.auth_service.model.domain.UserCredentials;
 import com.backend.auth_service.model.dto.LoginRequest;
 import com.backend.auth_service.model.dto.LoginResponse;
@@ -37,7 +38,7 @@ public class AuthService {
             // 🔴 2️⃣ Validar contraseña
             if (!passwordEncoder.matches(request.getPassword(), creds.getPassword())) {
                 log.warn("Intento fallido de login: contraseña incorrecta para {}", request.getEmail());
-                throw new ValidationException("Contraseña incorrecta");
+                throw new UnauthorizedException("Contraseña incorrecta");
             }
 
             // 🟢 3️⃣ Generar claims del token
@@ -55,7 +56,7 @@ public class AuthService {
                     .token(token)
                     .build();
 
-        } catch (ResourceNotFoundException | ValidationException e) {
+        } catch (ResourceNotFoundException | ValidationException | UnauthorizedException e) {
             // ⚠️ Errores esperados → los propagamos tal cual
             throw e;
         } catch (Exception e) {

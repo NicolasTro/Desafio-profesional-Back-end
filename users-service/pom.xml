@@ -145,6 +145,13 @@
             </exclusions>
         </dependency>
 
+        <!-- H2 in-memory database for tests and local runs -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- JUnit 5 explícito -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -174,6 +181,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>rest-assured</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-jcl</artifactId>
         </dependency>
@@ -191,9 +203,10 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.2.5</version>
                 <configuration>
-                    <reportsDirectory>C:\\temp\\users-reports</reportsDirectory>
-                    <forkCount>0</forkCount>
-                    <useSystemClassLoader>false</useSystemClassLoader>
+                        <reportsDirectory>C:\\temp\\users-reports</reportsDirectory>
+                        <!-- Run tests in a forked JVM so test reports are produced -->
+                        <forkCount>1</forkCount>
+                        <reuseForks>true</reuseForks>
                 </configuration>
             </plugin>
             <!-- Plugin de Spring Boot -->

@@ -22,6 +22,7 @@ Endpoint: POST /auth/login
   - Resultado esperado: 200 OK, body { "token": "<jwt>" }
   - Tipo: Funcional
   - Nivel: integracion
+  - Suite: smoke
   - Estado de diseño: Automatizado (`AuthIntegrationTest.login_shouldReturn200_whenCredentialsAreValid`)
   - Entorno: test
 
@@ -34,6 +35,7 @@ Endpoint: POST /auth/login
   - Resultado esperado: 401 Unauthorized, body con campo error
   - Tipo: Funcional
   - Nivel: integracion
+  - Suite: regression
   - Estado de diseño: Automatizado (`AuthIntegrationTest.login_shouldReturn401_whenCredentialsAreInvalid`)
   - Entorno: test
 
@@ -46,6 +48,7 @@ Endpoint: POST /auth/login
   - Resultado esperado: 404/401 según manejo de excepciones, con mensaje de error
   - Tipo: Funcional
   - Nivel: componentes / integracion
+  - Suite: regression
   - Estado de diseño: Parcialmente automatizado (`AuthServiceTest.login_shouldThrowException_whenUserNotFound` - unit)
   - Entorno: test
 
@@ -60,6 +63,7 @@ Endpoint: POST /auth/logout
   - Resultado esperado: 200 OK, { "message": "Logout exitoso para <email>" }
   - Tipo: Funcional
   - Nivel: componentes
+  - Suite: smoke
   - Estado de diseño: Automatizado (`AuthControllerTest.logout_withBearerToken_returnsOk`)
   - Entorno: test
 
@@ -72,6 +76,7 @@ Endpoint: POST /auth/logout
   - Resultado esperado: 401 Unauthorized, body con error "Token inválido"
   - Tipo: Funcional
   - Nivel: componentes
+  - Suite: regression
   - Estado de diseño: Automatizado (`AuthControllerTest.logout_withInvalidToken_returnsUnauthorized`)
   - Entorno: test
 
@@ -84,6 +89,7 @@ Endpoint: POST /auth/logout
   - Resultado esperado: 401 Unauthorized, body con error
   - Tipo: Funcional
   - Nivel: componentes
+  - Suite: regression
   - Estado de diseño: Automatizado (`AuthControllerTest.logout_missingHeader_returnsUnauthorized`)
   - Entorno: test
 
@@ -101,6 +107,7 @@ Endpoint: POST /users/register
   - Resultado esperado: 200 OK; response contiene user con `cvu` de 22 dígitos y `alias` en formato word.word.word
   - Tipo: Funcional
   - Nivel: integracion
+  - Suite: smoke
   - Estado de diseño: Diseñado (Pendiente de automatización)
   - Entorno: test
 
@@ -113,6 +120,7 @@ Endpoint: POST /users/register
   - Resultado esperado: 400 Bad Request con mensaje "El email no puede ser nulo o vacío"
   - Tipo: Funcional
   - Nivel: componentes / integracion
+  - Suite: regression
   - Estado de diseño: Diseñado (Pendiente de automatización)
   - Entorno: test
 
@@ -125,6 +133,7 @@ Endpoint: POST /users/register
   - Resultado esperado: 400 Bad Request con mensaje "La contraseña debe tener al menos 6 caracteres"
   - Tipo: Funcional
   - Nivel: componentes
+  - Suite: regression
   - Estado de diseño: Diseñado (Pendiente de automatización)
   - Entorno: test
 
@@ -137,6 +146,7 @@ Endpoint: POST /users/register
   - Resultado esperado: 400 Bad Request con mensaje "El email ya está registrado"
   - Tipo: Funcional
   - Nivel: componentes
+  - Suite: regression
   - Estado de diseño: Diseñado (Pendiente de automatización)
   - Entorno: test
 
@@ -149,6 +159,7 @@ Endpoint: POST /users/register
   - Resultado esperado: String.length == 22 y contiene solo dígitos
   - Tipo: Funcional
   - Nivel: componentes
+  - Suite: regression
   - Estado de diseño: Diseñado (Pendiente de automatización)
   - Entorno: local/test
 
@@ -161,9 +172,123 @@ Endpoint: POST /users/register
   - Resultado esperado: RuntimeException con mensaje "No hay palabras disponibles en words.txt"
   - Tipo: Funcional
   - Nivel: componentes
+  - Suite: regression
   - Estado de diseño: Diseñado (Pendiente de automatización)
   - Entorno: local/test
 
+
+## Sección: Accounts Service
+
+Endpoint: POST /accounts
+
+- ID: ACC-01
+  - Título: Crear cuenta exitosamente
+  - Descripción: Verificar que se crea una cuenta asociada a un usuario
+  - Precondición: Usuario existente
+  - #Paso: 1
+  - Pasos: POST /accounts con userId válido
+  - Resultado esperado: 200 OK, cuenta creada con cvu
+  - Tipo: Funcional
+  - Nivel: integracion
+  - Suite: smoke
+  - Estado de diseño: Diseñado (Pendiente de automatización)
+  - Entorno: test
+
+Endpoint: GET /accounts/{cvu}
+
+- ID: ACC-02
+  - Título: Obtener cuenta por CVU
+  - Descripción: Verificar que se obtiene la cuenta correcta por CVU
+  - Precondición: Cuenta existente
+  - #Paso: 1
+  - Pasos: GET /accounts/{cvu} con cvu válido
+  - Resultado esperado: 200 OK, datos de la cuenta
+  - Tipo: Funcional
+  - Nivel: integracion
+  - Suite: smoke
+  - Estado de diseño: Diseñado (Pendiente de automatización)
+  - Entorno: test
+
+Endpoint: GET /accounts/user/{userId}
+
+- ID: ACC-03
+  - Título: Obtener cuentas por usuario
+  - Descripción: Verificar que se obtienen las cuentas de un usuario
+  - Precondición: Usuario con cuentas
+  - #Paso: 1
+  - Pasos: GET /accounts/user/{userId}
+  - Resultado esperado: 200 OK, lista de cuentas
+  - Tipo: Funcional
+  - Nivel: integracion
+  - Suite: smoke
+  - Estado de diseño: Diseñado (Pendiente de automatización)
+  - Entorno: test
+
+
+## Sección: Cards Service
+
+Endpoint: GET /cards/{cvu}/cards
+
+- ID: CARD-01
+  - Título: Obtener tarjetas de una cuenta
+  - Descripción: Verificar que se obtienen las tarjetas asociadas a un CVU
+  - Precondición: Cuenta con tarjetas
+  - #Paso: 1
+  - Pasos: GET /cards/{cvu}/cards
+  - Resultado esperado: 200 OK, lista de tarjetas
+  - Tipo: Funcional
+  - Nivel: integracion
+  - Suite: smoke
+  - Estado de diseño: Diseñado (Pendiente de automatización)
+  - Entorno: test
+
+Endpoint: POST /cards/{cvu}
+
+- ID: CARD-02
+  - Título: Crear tarjeta para una cuenta
+  - Descripción: Verificar que se crea una tarjeta asociada a un CVU
+  - Precondición: Cuenta existente
+  - #Paso: 1
+  - Pasos: POST /cards/{cvu} con datos de tarjeta
+  - Resultado esperado: 200 OK, tarjeta creada
+  - Tipo: Funcional
+  - Nivel: integracion
+  - Suite: smoke
+  - Estado de diseño: Diseñado (Pendiente de automatización)
+  - Entorno: test
+
+
+## Sección: Transactions Service
+
+Endpoint: GET /transactions/{accountId}
+
+- ID: TRANS-01
+  - Título: Obtener transacciones de una cuenta
+  - Descripción: Verificar que se obtienen las transacciones de una cuenta
+  - Precondición: Cuenta con transacciones
+  - #Paso: 1
+  - Pasos: GET /transactions/{accountId}
+  - Resultado esperado: 200 OK, lista de transacciones
+  - Tipo: Funcional
+  - Nivel: integracion
+  - Suite: smoke
+  - Estado de diseño: Diseñado (Pendiente de automatización)
+  - Entorno: test
+
+Endpoint: POST /transactions
+
+- ID: TRANS-02
+  - Título: Crear transacción
+  - Descripción: Verificar que se crea una transacción entre cuentas
+  - Precondición: Cuentas origen y destino existentes
+  - #Paso: 1
+  - Pasos: POST /transactions con datos de transacción
+  - Resultado esperado: 200 OK, transacción creada
+  - Tipo: Funcional
+  - Nivel: integracion
+  - Suite: smoke
+  - Estado de diseño: Diseñado (Pendiente de automatización)
+  - Entorno: test
 
 
 ### Resultados por clase 
@@ -177,6 +302,34 @@ Users-service:
 
 - `UserControllerTest` -> Tests run: 1, Failures: 0, Errors: 0, Skipped: 0 (PASS)
 - `UserServiceTest` -> Tests run: 7, Failures: 0, Errors: 0, Skipped: 0 (PASS)
+
+Accounts-service:
+
+- `AccountsIntegrationTest` -> (PASS)
+- `AccountsServiceTest` -> (PASS)
+- `AccountsControllerTest` -> (PASS)
+
+Cards-service:
+
+- `CardControllerTest` -> (PASS)
+- `CardServiceTest` -> (PASS)
+- `CardRepositoryTest` -> (PASS)
+- `SmokeTest` (cards-service) -> (PASS)
+
+Transactions-service:
+
+- `TransactionControllerTest` -> (PASS)
+- `TransactionServiceTest` -> (PASS)
+
+Auth-service (additional):
+
+- `AuthIntegrationTest` -> (PASS)
+- `AuthSmokeTest` -> (PASS)
+
+Users-service (additional):
+
+- `UserIntegrationTest` -> (PASS)
+- `UserSmokeTest` -> (PASS)
 
 
 ## Ejecución detallada por caso de prueba
