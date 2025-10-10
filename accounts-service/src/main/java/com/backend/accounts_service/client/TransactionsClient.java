@@ -25,8 +25,12 @@ public interface TransactionsClient {
     /**
      * Obtener todas las transacciones de una cuenta por CVU
      */
-    @GetMapping("/transactions/{accountId}")
+    @GetMapping("/transactions/{accountId}/activity")
     List<TransactionResponseDTO> getAllTransactions(@PathVariable("accountId") String accountId);
+
+
+
+
 }
 
 

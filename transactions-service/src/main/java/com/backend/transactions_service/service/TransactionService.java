@@ -97,4 +97,19 @@ public class TransactionService {
         dto.setType(tx.getType()); // Enum -> String
         return dto;
     }
+
+
+
+    /** Obtener todas las transacciones de una cuenta por CVU (usado por AccountsClient)
+     */
+
+    public List<TransactionResponseDTO> getAllTransactions(String accountId) {
+        List<Transaction> transactions = transactionRepository.findByAccountIdOrderByDatedDesc(accountId);
+        return transactions.stream()
+                .map(this::toResponseDTO)
+                .collect(Collectors.toList());
+
+    }
+
+
 }

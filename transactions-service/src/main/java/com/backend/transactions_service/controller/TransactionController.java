@@ -109,4 +109,16 @@ public class TransactionController {
         TransactionResponseDTO response = transactionService.saveTransaction(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
+
+
+    @GetMapping("/{accountId}/activity")
+
+    public ResponseEntity<List<TransactionResponseDTO>> getAllTransactions(@PathVariable String accountId) {
+        List<TransactionResponseDTO> activity = transactionService.getAllTransactions(accountId);
+        return ResponseEntity.ok(activity);
+    }
+
+
+
+
 }

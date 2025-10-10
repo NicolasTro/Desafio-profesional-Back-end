@@ -275,7 +275,7 @@ public class AccountController {
                     @ApiResponse(responseCode = "404", description = "Cuenta no encontrada")
             }
     )
-    @GetMapping("/{accountId}/transactions")
+    @GetMapping("/{accountId}/activity")
     public ResponseEntity<List<TransactionResponseDTO>> getAllTransactions(@PathVariable String accountId) {
         return ResponseEntity.ok(accountService.getAccountTransactions(accountId));
     }
@@ -295,4 +295,8 @@ public class AccountController {
     public ResponseEntity<List<TransactionResponseDTO>> getLast5Transactions(@PathVariable String accountId) {
         return ResponseEntity.ok(accountService.getLast5Transactions(accountId));
     }
+
+
+
+
 }

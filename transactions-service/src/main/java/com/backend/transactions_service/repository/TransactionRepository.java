@@ -17,4 +17,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, String
      */
     List<Transaction> findByAccountId(String accountId);
 
+
+    /** * Todas las transacciones por CVU ordenadas por fecha descendente
+     */
+    List<Transaction> findByAccountIdOrderByDatedDesc(String accountId);
 }
