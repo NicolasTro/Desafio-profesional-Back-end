@@ -31,7 +31,9 @@ public class AccountController {
         this.accountService = accountService;
     }
 
+    // =========================================================
     // 🔹 Crear cuenta
+    // =========================================================
     @Operation(
             summary = "Crear una nueva cuenta",
             description = """
@@ -68,18 +70,59 @@ public class AccountController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    // 🔹 Actualizar cuenta
+    // =========================================================
+    // 🔹 Nuevo endpoint: Ingreso de dinero (Depósito)
+    // =========================================================
     @Operation(
-            summary = "Actualizar datos de una cuenta",
-            description = "Permite modificar los datos de una cuenta existente, como alias o moneda.",
+            summary = "Registrar ingreso de dinero en la cuenta",
+            description = """
+                    Registra un ingreso de dinero (depósito) desde una tarjeta de crédito o débito hacia la cuenta del usuario.
+                    Este endpoint coordina con el `transactions-service` utilizando resiliencia (Retry + CircuitBreaker).
+                    Si ocurre un fallo en el registro de la transacción, se revierte automáticamente el saldo.
+                    """,
             parameters = {
-                    @Parameter(name = "cvu", description = "CVU de la cuenta", example = "0001234500006789012345")
+                    @Parameter(name = "accountId", description = "Identificador interno de la cuenta", example = "uuid-cuenta-123")
             },
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Datos del ingreso de dinero",
+                    required = true,
+                    content = @Content(
+                            schema = @Schema(implementation = TransactionRequestDTO.class),
+                            examples = @ExampleObject(
+                                    name = "Ejemplo de ingreso de dinero",
+                                    value = """
+                                            {
+                                              "amount": 2500.00,
+                                              "description": "Carga con tarjeta VISA 4567",
+                                              "origin": "TARJETA",
+                                              "destination": "2424522743941613290685",
+                                              "cardId": "card-abc-123",
+                                              "type": "DEPOSIT"
+                                            }
+                                            """
+                            )
+                    )
+            ),
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Cuenta actualizada correctamente"),
-                    @ApiResponse(responseCode = "404", description = "Cuenta no encontrada")
+                    @ApiResponse(responseCode = "201", description = "Depósito realizado correctamente"),
+                    @ApiResponse(responseCode = "400", description = "Datos inválidos o saldo incorrecto"),
+                    @ApiResponse(responseCode = "500", description = "Error al registrar la transacción o servicio no disponible")
             }
     )
+    @PostMapping("/{accountId}/transferences")
+    public ResponseEntity<TransactionResponseDTO> registerDeposit(
+        @PathVariable("accountId") String accountId,
+            @RequestBody TransactionRequestDTO request) {
+
+        log.info("💰 Iniciando depósito para la cuenta {}", accountId);
+        TransactionResponseDTO response = accountService.registerDeposit(accountId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    // =========================================================
+    // 🔹 Actualizar cuenta
+    // =========================================================
+    @Operation(summary = "Actualizar datos de una cuenta", description = "Permite modificar alias o moneda.")
     @PatchMapping("/{cvu}")
     public ResponseEntity<AccountResponseDTO> updateAccount(
             @PathVariable String cvu,
@@ -87,216 +130,126 @@ public class AccountController {
         return ResponseEntity.ok(accountService.updateAccount(cvu, request));
     }
 
+    // =========================================================
     // 🔹 Eliminar cuenta
-    @Operation(
-            summary = "Eliminar cuenta",
-            description = "Elimina una cuenta por su identificador. Usado en rollbacks o mantenimiento interno.",
-            parameters = {
-                    @Parameter(name = "id", description = "ID interno de la cuenta", example = "uuid-cuenta-123")
-            },
-            responses = {
-                    @ApiResponse(responseCode = "204", description = "Cuenta eliminada correctamente"),
-                    @ApiResponse(responseCode = "404", description = "Cuenta no encontrada")
-            }
-    )
+    // =========================================================
+    @Operation(summary = "Eliminar cuenta", description = "Elimina una cuenta por su ID interno.")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteAccount(@PathVariable String id) {
         accountService.deleteAccount(id);
         return ResponseEntity.noContent().build();
     }
 
+    // =========================================================
     // 🔹 Obtener cuenta por CVU
-    @Operation(
-            summary = "Obtener cuenta por CVU",
-            description = "Devuelve la información completa de una cuenta según su CVU.",
-            parameters = {
-                    @Parameter(name = "cvu", description = "CVU de la cuenta", example = "0001234500006789012345")
-            },
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "Cuenta encontrada correctamente"),
-                    @ApiResponse(responseCode = "404", description = "Cuenta no encontrada")
-            }
-    )
+    // =========================================================
+    @Operation(summary = "Obtener cuenta por CVU")
     @GetMapping("/{cvu}")
     public ResponseEntity<AccountResponseDTO> getAccount(@PathVariable String cvu) {
         return ResponseEntity.ok(accountService.getAccountByCvu(cvu));
     }
 
-    // 🔹 Obtener cuentas por usuario
-    @Operation(
-            summary = "Obtener cuenta por userId",
-            description = "Devuelve la cuenta asociada a un usuario específico.",
-            parameters = {
-                    @Parameter(name = "userId", description = "Identificador único del usuario", example = "uuid-usuario-123")
-            },
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "Cuenta encontrada correctamente"),
-                    @ApiResponse(responseCode = "404", description = "Usuario o cuenta no encontrada")
-            }
-    )
+    // =========================================================
+    // 🔹 Obtener cuenta por userId
+    // =========================================================
+    @Operation(summary = "Obtener cuenta por userId")
     @GetMapping("/user/{userId}")
     public ResponseEntity<AccountResponseDTO> getAccountsByUserId(@PathVariable String userId) {
         return ResponseEntity.ok(accountService.getAccountByUserId(userId));
     }
 
-    // 🔹 Obtener tarjetas
-    @Operation(
-            summary = "Obtener todas las tarjetas asociadas a un CVU",
-            description = "Devuelve todas las tarjetas asociadas a una cuenta.",
-            parameters = {
-                    @Parameter(name = "cvu", description = "CVU de la cuenta", example = "0001234500006789012345")
-            },
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "Tarjetas obtenidas correctamente"),
-                    @ApiResponse(responseCode = "404", description = "Cuenta no encontrada")
-            }
-    )
+    // =========================================================
+    // 🔹 Tarjetas (cards-service)
+    // =========================================================
     @GetMapping("/{cvu}/cards")
-    public ResponseEntity<List<CardSummaryDTO>> getCards(@PathVariable String cvu) {
-        return ResponseEntity.ok(accountService.getCards(cvu));
-    }
+        public ResponseEntity<List<CardResponseDTO>> getCards(@PathVariable String cvu) {
+                return ResponseEntity.ok(accountService.getCards(cvu));
+        }
 
-    // 🔹 Agregar tarjeta
-    @Operation(
-            summary = "Agregar una nueva tarjeta a una cuenta",
-            description = "Asocia una nueva tarjeta (crédito o débito) a una cuenta existente.",
-            parameters = {
-                    @Parameter(name = "cvu", description = "CVU de la cuenta", example = "0001234500006789012345")
-            },
+    @PostMapping("/{cvu}/cards")
+    @Operation(summary = "Agregar tarjeta a una cuenta", description = "Registra una nueva tarjeta (débito/crédito) asociada a la cuenta indicada.",
             requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Datos de la tarjeta a asociar",
+                    description = "Datos de la tarjeta a registrar",
                     required = true,
-                    content = @Content(
-                            schema = @Schema(implementation = CardRequestDTO.class),
-                            examples = @ExampleObject(
-                                    name = "Ejemplo de tarjeta",
-                                    value = """
-                                            {
-                                              "cardNumber": "4111111111111111",
-                                              "cardHolder": "Juan Pérez",
-                                              "expiryDate": "12/28",
-                                              "cvv": "123",
-                                              "type": "CREDIT"
-                                            }
-                                            """
-                            )
-                    )
+                    content = @Content(schema = @Schema(implementation = CardRequestDTO.class))
             ),
             responses = {
-                    @ApiResponse(responseCode = "201", description = "Tarjeta asociada correctamente"),
+                    @ApiResponse(responseCode = "201", description = "Tarjeta registrada correctamente"),
                     @ApiResponse(responseCode = "400", description = "Datos inválidos"),
-                    @ApiResponse(responseCode = "409", description = "La tarjeta ya está asociada a otra cuenta")
+                    @ApiResponse(responseCode = "409", description = "Tarjeta ya asociada a otra cuenta")
             }
     )
-    @PostMapping("/{cvu}/cards")
-    public ResponseEntity<CardResponseDTO> addCard(
-            @PathVariable String cvu,
-            @RequestBody CardRequestDTO request) {
+    public ResponseEntity<CardResponseDTO> addCard(@PathVariable String cvu, @RequestBody CardRequestDTO request) {
         CardResponseDTO response = accountService.addCard(cvu, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    // 🔹 Obtener tarjeta específica
-    @Operation(
-            summary = "Obtener una tarjeta específica",
-            description = "Devuelve los datos de una tarjeta determinada asociada a la cuenta indicada.",
-            parameters = {
-                    @Parameter(name = "cvu", description = "CVU de la cuenta", example = "0001234500006789012345"),
-                    @Parameter(name = "cardId", description = "Identificador único de la tarjeta", example = "uuid-tarjeta-123")
-            },
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "Tarjeta encontrada correctamente"),
-                    @ApiResponse(responseCode = "404", description = "Tarjeta no encontrada")
-            }
-    )
     @GetMapping("/{cvu}/cards/{cardId}")
-    public ResponseEntity<CardResponseDTO> getCardById(
-            @PathVariable String cvu,
-            @PathVariable String cardId) {
-        return ResponseEntity.ok(accountService.getCardById(cvu, cardId));
+    @Operation(summary = "Obtener tarjeta por ID", description = "Devuelve los datos de una tarjeta asociada a la cuenta indicada.",
+            parameters = {@Parameter(name = "cvu", description = "CVU de la cuenta"), @Parameter(name = "cardId", description = "Identificador de la tarjeta")},
+            responses = {@ApiResponse(responseCode = "200", description = "Tarjeta encontrada"), @ApiResponse(responseCode = "404", description = "Tarjeta no encontrada")}
+    )
+    public ResponseEntity<CardResponseDTO> getCardById(@PathVariable String cardId, @PathVariable String cvu) {
+        return ResponseEntity.ok(accountService.getCardById(cardId, cvu));
     }
 
-    // 🔹 Eliminar tarjeta
-    @Operation(
-            summary = "Eliminar una tarjeta asociada",
-            description = "Elimina una tarjeta específica asociada a la cuenta indicada.",
-            parameters = {
-                    @Parameter(name = "cvu", description = "CVU de la cuenta", example = "0001234500006789012345"),
-                    @Parameter(name = "cardId", description = "Identificador único de la tarjeta", example = "uuid-tarjeta-123")
-            },
-            responses = {
-                    @ApiResponse(responseCode = "204", description = "Tarjeta eliminada correctamente"),
-                    @ApiResponse(responseCode = "404", description = "Tarjeta no encontrada")
-            }
-    )
     @DeleteMapping("/{cvu}/cards/{cardId}")
-    public ResponseEntity<Void> deleteCard(
-            @PathVariable String cvu,
-            @PathVariable String cardId) {
+    @Operation(summary = "Eliminar tarjeta", description = "Elimina la tarjeta especificada asociada a la cuenta.",
+            parameters = {@Parameter(name = "cvu", description = "CVU de la cuenta"), @Parameter(name = "cardId", description = "Identificador de la tarjeta")},
+            responses = {@ApiResponse(responseCode = "204", description = "Tarjeta eliminada"), @ApiResponse(responseCode = "404", description = "Cuenta o tarjeta no encontrada")}
+    )
+    public ResponseEntity<Void> deleteCard(@PathVariable String cvu, @PathVariable String cardId) {
         accountService.deleteCard(cvu, cardId);
         return ResponseEntity.noContent().build();
     }
 
-    // 🔹 Actualizar balance
-    @Operation(
-            summary = "Actualizar balance de la cuenta",
-            description = """
-                    Actualiza el saldo de una cuenta según una transacción (ingreso o egreso).
-                    Usado internamente por `transactions-service`.
-                    """,
-            parameters = {
-                    @Parameter(name = "cvu", description = "CVU de la cuenta", example = "0001234500006789012345"),
-                    @Parameter(name = "amount", description = "Monto a modificar", example = "2500.00"),
-                    @Parameter(name = "type", description = "Tipo de operación (INCOME o OUTCOME)", example = "INCOME")
-            },
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "Balance actualizado correctamente"),
-                    @ApiResponse(responseCode = "400", description = "Datos inválidos o tipo de operación incorrecto")
-            }
-    )
+    // =========================================================
+    // 🔹 Actualizar balance (interno)
+    // =========================================================
     @PatchMapping("/{cvu}/balance")
+    @Operation(summary = "Actualizar balance (interno)", description = "Actualiza el balance de una cuenta. Usado internamente por transactions-service.",
+        parameters = {@Parameter(name = "cvu", description = "CVU de la cuenta"),
+            @Parameter(name = "amount", description = "Monto a aplicar (positivo)"),
+            @Parameter(name = "type", description = "Tipo: CREDIT o DEBIT")},
+        responses = {@ApiResponse(responseCode = "200", description = "Balance actualizado"), @ApiResponse(responseCode = "400", description = "Tipo inválido o saldo insuficiente")}
+    )
     public ResponseEntity<Void> updateBalance(
-            @PathVariable String cvu,
-            @RequestParam Double amount,
-            @RequestParam String type) {
-        accountService.updateBalance(cvu, amount, type);
-        return ResponseEntity.ok().build();
+        @PathVariable String cvu,
+        @RequestParam Double amount,
+        @RequestParam String type) {
+    accountService.updateBalance(cvu, amount, type);
+    return ResponseEntity.ok().build();
     }
 
-    // 🔹 Obtener todas las transacciones
-    @Operation(
-            summary = "Obtener todas las transacciones de una cuenta",
-            description = "Devuelve todas las transacciones asociadas a una cuenta determinada.",
-            parameters = {
-                    @Parameter(name = "cvu", description = "CVU de la cuenta", example = "0001234500006789012345")
-            },
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "Transacciones obtenidas correctamente"),
-                    @ApiResponse(responseCode = "404", description = "Cuenta no encontrada")
-            }
-    )
+    // =========================================================
+    // 🔹 Transacciones (transactions-service)
+    // =========================================================
     @GetMapping("/{accountId}/activity")
+    @Operation(summary = "Obtener transacciones de una cuenta", description = "Devuelve todas las transacciones asociadas a la cuenta indicada.",
+            parameters = {@Parameter(name = "accountId", description = "Identificador/CVU de la cuenta")},
+            responses = {@ApiResponse(responseCode = "200", description = "Lista de transacciones"), @ApiResponse(responseCode = "404", description = "Cuenta no encontrada")}
+    )
     public ResponseEntity<List<TransactionResponseDTO>> getAllTransactions(@PathVariable String accountId) {
         return ResponseEntity.ok(accountService.getAccountTransactions(accountId));
     }
 
-    // 🔹 Obtener últimas 5 transacciones
-    @Operation(
-            summary = "Obtener las últimas 5 transacciones",
-            description = "Devuelve las últimas cinco transacciones registradas para la cuenta indicada.",
-            parameters = {
-                    @Parameter(name = "cvu", description = "CVU de la cuenta", example = "0001234500006789012345")
-            },
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "Transacciones obtenidas correctamente")
-            }
-    )
     @GetMapping("/{accountId}/transactions/last5")
+    @Operation(summary = "Últimas 5 transacciones", description = "Devuelve las últimas 5 transacciones de la cuenta indicada.",
+            parameters = {@Parameter(name = "accountId", description = "Identificador/CVU de la cuenta")},
+            responses = {@ApiResponse(responseCode = "200", description = "Lista de hasta 5 transacciones")}
+    )
     public ResponseEntity<List<TransactionResponseDTO>> getLast5Transactions(@PathVariable String accountId) {
         return ResponseEntity.ok(accountService.getLast5Transactions(accountId));
     }
 
-
-
-
+    @GetMapping("/{accountId}/activity/{transferenceId}")
+    @Operation(summary = "Obtener transacción por ID", description = "Devuelve una transacción específica asociada a la cuenta.",
+            parameters = {@Parameter(name = "accountId", description = "Identificador/CVU de la cuenta"), @Parameter(name = "transferenceId", description = "ID de la transacción")},
+            responses = {@ApiResponse(responseCode = "200", description = "Transacción encontrada"), @ApiResponse(responseCode = "404", description = "Transacción no encontrada")}
+    )
+    public ResponseEntity<TransactionResponseDTO> getTransactionByIdAndAccountId(
+            @PathVariable("accountId") String accountId,
+            @PathVariable("transferenceId") String transferenceId) {
+        return ResponseEntity.ok(accountService.getTransactionByIdAndAccountId(accountId, transferenceId));
+    }
 }

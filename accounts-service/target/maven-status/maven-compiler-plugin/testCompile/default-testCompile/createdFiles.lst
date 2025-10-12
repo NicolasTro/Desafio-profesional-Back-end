@@ -1,0 +1,4 @@
+com\backend\accounts_service\integration\AccountsIntegrationTest.class
+com\backend\accounts_service\service\AccountsServiceTest.class
+com\backend\accounts_service\integration\DepositWithCardIntegrationTest.class
+com\backend\accounts_service\controller\AccountsControllerTest.class
