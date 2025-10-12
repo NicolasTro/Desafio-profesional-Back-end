@@ -2,7 +2,6 @@ package com.backend.accounts_service.client;
 
 import com.backend.accounts_service.model.dto.CardRequestDTO;
 import com.backend.accounts_service.model.dto.CardResponseDTO;
-import com.backend.accounts_service.model.dto.CardSummaryDTO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,7 +15,7 @@ public interface CardsClient {
      * Obtener todas las tarjetas asociadas a un CVU.
      */
     @GetMapping("/cards/{cvu}/cards")
-    List<CardSummaryDTO> getCardsByAccount(@PathVariable("cvu") String cvu);
+    List<CardResponseDTO> getCardsByAccount(@PathVariable("cvu") String cvu);
 
     /**
      * Agregar nueva tarjeta asociada a un CVU.
@@ -29,7 +28,7 @@ public interface CardsClient {
      */
 
     @GetMapping("/cards/{cvu}/{cardId}")
-    CardResponseDTO getCardById(@PathVariable("cvu") String cvu, @PathVariable("cardId") String cardId);
+    CardResponseDTO getCardById(@PathVariable("cardId") String cardId, @PathVariable("cvu") String cvu);
 
     /**
      * Eliminar una tarjeta específica asociada a un CVU.
