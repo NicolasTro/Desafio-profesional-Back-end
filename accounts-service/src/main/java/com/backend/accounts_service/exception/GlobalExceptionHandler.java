@@ -39,7 +39,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
 
-    // 🟢 Validación personalizada (400)
+    // � Sin permisos (403)
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<Map<String, String>> handleForbidden(ForbiddenException ex) {
+        Map<String, String> response = new HashMap<>();
+        response.put("error", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+    }
+
+    // �🟢 Validación personalizada (400)
     @ExceptionHandler(ValidationException.class)
     public ResponseEntity<Map<String, String>> handleCustomValidation(ValidationException ex) {
         Map<String, String> response = new HashMap<>();
