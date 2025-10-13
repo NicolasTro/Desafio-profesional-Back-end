@@ -41,8 +41,8 @@ public class CardService {
     /**
      * Obtener una tarjeta específica por CVU + cardId
      */
-    public CardResponseDTO getCardById(String cvu, String cardId) {
-        Optional<Card> card = cardRepository.findByIdAndAccountId(cvu,cardId);
+    public CardResponseDTO getCardById(String cardId, String cvu) {
+        Optional<Card> card = cardRepository.findByIdAndAccountId(cardId, cvu);
 
         log.info(card);
         if (card.isEmpty()) {
@@ -142,7 +142,7 @@ public class CardService {
     /**
      * Eliminar tarjeta por CVU + cardId
      */
-    public void deleteCard(String cvu, String cardId) {
+    public void deleteCard(String accountId, String cardId) {
         Optional<Card> card = cardRepository.findById(cardId);
         if (card.isEmpty()) {
             throw new RuntimeException("Tarjeta no encontrada");

@@ -65,12 +65,13 @@ public class CardController {
                     @ApiResponse(responseCode = "500", description = "Error interno del servidor")
             }
     )
-    @GetMapping("/{cvu}/{cardId}")
-    public ResponseEntity<CardResponseDTO> getCard(
-            @PathVariable String cvu,
-            @PathVariable String cardId) {
-        return ResponseEntity.ok(cardService.getCardById(cvu, cardId));
-    }
+        @GetMapping("/{cvu}/{cardId}")
+        public ResponseEntity<CardResponseDTO> getCard(
+                        @PathVariable("cardId") String cardId,
+                        @PathVariable("cvu") String cvu
+                        ) {
+                return ResponseEntity.ok(cardService.getCardById(cardId, cvu));
+        }
 
     // 🔹 Agregar una nueva tarjeta
     @Operation(
