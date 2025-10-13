@@ -38,12 +38,12 @@ class TransactionServiceTest {
     @Test
     void saveTransaction_shouldSaveAndCallAccountsClient() {
         TransactionRequestDTO dto = new TransactionRequestDTO();
-        dto.setAccountId("test-cvu");
+    dto.setAccountId("1234567890123456789012");
     dto.setAmount(100.0);
     dto.setType(TransactionType.CREDIT);
         dto.setDescription("desc");
-        dto.setOrigin("o");
-        dto.setDestination("d");
+    dto.setOrigin("1234567890123456789012");
+    dto.setDestination("1234567890123456789013");
         dto.setDated(LocalDateTime.now());
 
         Transaction saved = new Transaction();
@@ -66,9 +66,9 @@ class TransactionServiceTest {
     void findAllByAccountId_shouldReturnList() {
         Transaction tx = new Transaction();
         tx.setId("t1");
-        when(transactionRepository.findByAccountId("cvu")).thenReturn(Collections.singletonList(tx));
+    when(transactionRepository.findByAccountId("1234567890123456789012")).thenReturn(Collections.singletonList(tx));
 
-        List<TransactionResponseDTO> result = transactionService.findAllByAccountId("cvu");
+    List<TransactionResponseDTO> result = transactionService.findAllByAccountId("1234567890123456789012");
 
         assertEquals(1, result.size());
         assertEquals("t1", result.get(0).getId());
@@ -78,9 +78,9 @@ class TransactionServiceTest {
     void findLast5ByAccountId_shouldReturnList() {
         Transaction tx = new Transaction();
         tx.setId("t2");
-        when(transactionRepository.findLast5ByAccountId("cvu")).thenReturn(Collections.singletonList(tx));
+    when(transactionRepository.findLast5ByAccountId("1234567890123456789012")).thenReturn(Collections.singletonList(tx));
 
-        List<TransactionResponseDTO> result = transactionService.findLast5ByAccountId("cvu");
+    List<TransactionResponseDTO> result = transactionService.findLast5ByAccountId("1234567890123456789012");
 
         assertEquals(1, result.size());
         assertEquals("t2", result.get(0).getId());
