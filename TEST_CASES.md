@@ -108,7 +108,7 @@ Endpoint: POST /users/register
   - Tipo: Funcional
   - Nivel: integracion
   - Suite: smoke
-  - Estado de diseño: Diseñado (Pendiente de automatización)
+  - Estado de diseño: Automatizado (`UserControllerTest` / `UserServiceTest`)
   - Entorno: test
 
 - ID: USER-02
@@ -121,7 +121,7 @@ Endpoint: POST /users/register
   - Tipo: Funcional
   - Nivel: componentes / integracion
   - Suite: regression
-  - Estado de diseño: Diseñado (Pendiente de automatización)
+  - Estado de diseño: Automatizado (`UserServiceTest`)
   - Entorno: test
 
 - ID: USER-03
@@ -134,7 +134,7 @@ Endpoint: POST /users/register
   - Tipo: Funcional
   - Nivel: componentes
   - Suite: regression
-  - Estado de diseño: Diseñado (Pendiente de automatización)
+  - Estado de diseño: Automatizado (`UserServiceTest`)
   - Entorno: test
 
 - ID: USER-04
@@ -147,7 +147,7 @@ Endpoint: POST /users/register
   - Tipo: Funcional
   - Nivel: componentes
   - Suite: regression
-  - Estado de diseño: Diseñado (Pendiente de automatización)
+  - Estado de diseño: Automatizado (`UserServiceTest`)
   - Entorno: test
 
 - ID: USER-05
@@ -160,7 +160,7 @@ Endpoint: POST /users/register
   - Tipo: Funcional
   - Nivel: componentes
   - Suite: regression
-  - Estado de diseño: Diseñado (Pendiente de automatización)
+  - Estado de diseño: Automatizado (`UserServiceTest`)
   - Entorno: local/test
 
 - ID: USER-06
@@ -173,7 +173,7 @@ Endpoint: POST /users/register
   - Tipo: Funcional
   - Nivel: componentes
   - Suite: regression
-  - Estado de diseño: Diseñado (Pendiente de automatización)
+  - Estado de diseño: Parcialmente automatizado (`UserServiceTest`)
   - Entorno: local/test
 
 
@@ -191,7 +191,7 @@ Endpoint: POST /accounts
   - Tipo: Funcional
   - Nivel: integracion
   - Suite: smoke
-  - Estado de diseño: Diseñado (Pendiente de automatización)
+  - Estado de diseño: Automatizado (`AccountsIntegrationTest`)
   - Entorno: test
 
 Endpoint: GET /accounts/{cvu}
@@ -206,7 +206,7 @@ Endpoint: GET /accounts/{cvu}
   - Tipo: Funcional
   - Nivel: integracion
   - Suite: smoke
-  - Estado de diseño: Diseñado (Pendiente de automatización)
+  - Estado de diseño: Automatizado (`AccountsIntegrationTest`)
   - Entorno: test
 
 Endpoint: GET /accounts/user/{userId}
@@ -221,7 +221,22 @@ Endpoint: GET /accounts/user/{userId}
   - Tipo: Funcional
   - Nivel: integracion
   - Suite: smoke
-  - Estado de diseño: Diseñado (Pendiente de automatización)
+  - Estado de diseño: Automatizado (`AccountsIntegrationTest`)
+  - Entorno: test
+
+Endpoint: POST /accounts/{accountId}/deposit
+
+- ID: ACC-04
+  - Título: Depósito con tarjeta (registro de cardId)
+  - Descripción: Verificar que al registrar un depósito indicando origin = "TARJETA" se acepta un campo `cardId` y este se propaga/almacena apropiadamente en el flujo (se registra la transacción y se notifica al Transactions Service el `cardId`).
+  - Precondición: Cuenta existente con `accountId`; tarjeta asociada disponible (cardId válido)
+  - #Paso: 1
+  - Pasos: POST /accounts/{accountId}/deposit con payload {"amount": 500.0, "origin":"TARJETA", "cardId":"card-abc-123"}
+  - Resultado esperado: 200 OK; depósito registrado y transacción creada; el `cardId` aparece en el request enviado al Transactions Service.
+  - Tipo: Funcional
+  - Nivel: integracion
+  - Suite: regression
+  - Estado de diseño: Automatizado (`DepositWithCardIntegrationTest`)
   - Entorno: test
 
 
@@ -239,7 +254,7 @@ Endpoint: GET /cards/{cvu}/cards
   - Tipo: Funcional
   - Nivel: integracion
   - Suite: smoke
-  - Estado de diseño: Diseñado (Pendiente de automatización)
+  - Estado de diseño: Automatizado (`CardControllerTest`)
   - Entorno: test
 
 Endpoint: POST /cards/{cvu}
@@ -254,7 +269,7 @@ Endpoint: POST /cards/{cvu}
   - Tipo: Funcional
   - Nivel: integracion
   - Suite: smoke
-  - Estado de diseño: Diseñado (Pendiente de automatización)
+  - Estado de diseño: Automatizado (`CardControllerTest`)
   - Entorno: test
 
 
@@ -272,7 +287,7 @@ Endpoint: GET /transactions/{accountId}
   - Tipo: Funcional
   - Nivel: integracion
   - Suite: smoke
-  - Estado de diseño: Diseñado (Pendiente de automatización)
+  - Estado de diseño: Automatizado (`TransactionControllerTest`)
   - Entorno: test
 
 Endpoint: POST /transactions
@@ -287,7 +302,20 @@ Endpoint: POST /transactions
   - Tipo: Funcional
   - Nivel: integracion
   - Suite: smoke
-  - Estado de diseño: Diseñado (Pendiente de automatización)
+  - Estado de diseño: Automatizado (`TransactionServiceTest`)
+  - Entorno: test
+
+- ID: TRANS-03
+  - Título: Registro de transacción con cardId
+  - Descripción: Verificar que cuando una transacción es creada como resultado de un depósito originado en tarjeta, el campo `cardId` se registra en la entidad `Transaction` y aparece en la respuesta/DTO.
+  - Precondición: Cuenta origen y destino existentes; request de creación de transacción contiene campo `cardId` opcional.
+  - #Paso: 1
+  - Pasos: POST /transactions con payload {"fromAccountId":"<cvu-origen>", "toAccountId":"<cvu-destino>", "amount":500.0, "cardId":"card-abc-123"}
+  - Resultado esperado: 200 OK; transacción creada con `cardId` presente en el registro y en el `TransactionResponseDTO`.
+  - Tipo: Funcional
+  - Nivel: integracion
+  - Suite: regression
+  - Estado de diseño: Automatizado (`TransactionServiceTest` / `TransactionControllerTest`) - unit + controller tests present; si se requiere E2E, añadir integración adicional.
   - Entorno: test
 
 
@@ -320,6 +348,8 @@ Transactions-service:
 
 - `TransactionControllerTest` -> (PASS)
 - `TransactionServiceTest` -> (PASS)
+ - `DepositWithCardIntegrationTest` (accounts-service) -> Tests run: 1, Failures: 0, Errors: 0, Skipped: 0 (PASS)
+
 
 Auth-service (additional):
 
@@ -466,6 +496,26 @@ A continuación se registran, por cada caso, solo los campos solicitados: Fecha 
 - ID: ACC-03
   - Fecha de ejecucion: 2025-10-08
   - Estado de ejecucion: PASADO
+
+## Ejecución detallada: Casos añadidos recientemente
+
+- ID: ACC-04 (DepositWithCard)
+  - Fecha de ejecución: 2025-10-12
+  - Estado de ejecución: PASADO
+  - Resultado obtenido: 200 OK; la petición de depósito con campo `cardId` y origin `TARJETA` fue procesada correctamente. Se verificó que `cardId` fue pasado al cliente de transactions.
+  - Suite: DepositWithCardIntegrationTest (integration)
+  - Entorno: test
+  - Ejecutor: Automated run via Maven (PowerShell)
+  - Observaciones: Test cubre el flujo de depósito con tarjeta y la validación de `cardId`.
+
+- ID: TRANS-03 (Transactions - Controller/Service)
+  - Fecha de ejecución: 2025-10-12
+  - Estado de ejecución: PASADO
+  - Resultado obtenido: 200 OK; endpoints y lógica de transacciones responden según contrato.
+  - Suite: TransactionControllerTest / TransactionServiceTest
+  - Entorno: test
+  - Ejecutor: Automated run via Maven
+  - Observaciones: Se ejecutaron pruebas unitarias e integración; todas verdes.
   - Resultado obtenido: 200 OK; lista de cuentas devuelta
   - Suite: AccountsIntegrationTest (integration)
   - Entorno: test
