@@ -1,4 +1,4 @@
-package com.backend.auth_service.exception;
+package com.backend.transactions_service.exception;
 
 public class ResourceNotFoundException extends RuntimeException {
     public ResourceNotFoundException(String message) {

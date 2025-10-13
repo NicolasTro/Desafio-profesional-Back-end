@@ -33,6 +33,9 @@ public class Transaction {
     @Column(nullable = false)
     private String destination;
 
+    // Identificador opcional de la tarjeta usada en la transacción
+    private String cardId;
+
     @Enumerated(EnumType.STRING)
     private TransactionType type;
 }

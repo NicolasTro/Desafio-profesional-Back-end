@@ -1,4 +1,4 @@
-package com.backend.auth_service.exception;
+package com.backend.transactions_service.exception;
 
 public class ValidationException extends RuntimeException {
     public ValidationException(String message) {
