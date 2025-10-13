@@ -1,6 +1,5 @@
 C:\Users\ansu7\Documents\Programacion\Desafio desarrollo Back-End\Back-end\cards-service\src\main\java\com\backend\cards_service\CardsApplication.java
 C:\Users\ansu7\Documents\Programacion\Desafio desarrollo Back-End\Back-end\cards-service\src\main\java\com\backend\cards_service\config\FeignConfig.java
-C:\Users\ansu7\Documents\Programacion\Desafio desarrollo Back-End\Back-end\cards-service\src\main\java\com\backend\cards_service\config\OpenApiConfig.java
 C:\Users\ansu7\Documents\Programacion\Desafio desarrollo Back-End\Back-end\cards-service\src\main\java\com\backend\cards_service\config\SecurityConfig.java
 C:\Users\ansu7\Documents\Programacion\Desafio desarrollo Back-End\Back-end\cards-service\src\main\java\com\backend\cards_service\controller\CardController.java
 C:\Users\ansu7\Documents\Programacion\Desafio desarrollo Back-End\Back-end\cards-service\src\main\java\com\backend\cards_service\exception\CardAlreadyExistsInAccountException.java
