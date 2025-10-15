@@ -1,0 +1,144 @@
+version: '3.8'
+services:
+  eureka-server:
+    build:
+      context: .
+      dockerfile: ./eureka-server/Dockerfile
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    networks:
+      - backend-net
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: ./api-gateway/Dockerfile
+    container_name: api-gateway
+    environment:
+      - JAVA_OPTS=-Deureka.client.service-url.defaultZone=http://eureka-server:8761/eureka/
+    ports:
+      - "8080:8080"
+    depends_on:
+      - eureka-server
+    networks:
+      - backend-net
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: ./auth-service/Dockerfile
+    container_name: auth-service
+    environment:
+      - JAVA_OPTS=-Deureka.client.service-url.defaultZone=http://eureka-server:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/backdb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=backuser
+      - SPRING_DATASOURCE_PASSWORD=backpass
+    ports:
+      - "8082:8082"
+    depends_on:
+      - eureka-server
+      - mysql
+    networks:
+      - backend-net
+
+  users-service:
+    build:
+      context: .
+      dockerfile: ./users-service/Dockerfile
+    container_name: users-service
+    environment:
+      - JAVA_OPTS=-Deureka.client.service-url.defaultZone=http://eureka-server:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/backdb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=backuser
+      - SPRING_DATASOURCE_PASSWORD=backpass
+    ports:
+      - "8081:8081"
+    depends_on:
+      - eureka-server
+      - mysql
+    networks:
+      - backend-net
+
+  accounts-service:
+    build:
+      context: .
+      dockerfile: ./accounts-service/Dockerfile
+    container_name: accounts-service
+    environment:
+      - JAVA_OPTS=-Deureka.client.service-url.defaultZone=http://eureka-server:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/backdb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=backuser
+      - SPRING_DATASOURCE_PASSWORD=backpass
+    ports:
+      - "8083:8083"
+    depends_on:
+      - eureka-server
+      - mysql
+    networks:
+      - backend-net
+
+  cards-service:
+    build:
+      context: .
+      dockerfile: ./cards-service/Dockerfile
+    container_name: cards-service
+    environment:
+      - JAVA_OPTS=-Deureka.client.service-url.defaultZone=http://eureka-server:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/backdb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=backuser
+      - SPRING_DATASOURCE_PASSWORD=backpass
+    ports:
+      - "8084:8084"
+    depends_on:
+      - eureka-server
+      - mysql
+    networks:
+      - backend-net
+
+  transactions-service:
+    build:
+      context: .
+      dockerfile: ./transactions-service/Dockerfile
+    container_name: transactions-service
+    environment:
+      - JAVA_OPTS=-Deureka.client.service-url.defaultZone=http://eureka-server:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/backdb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=backuser
+      - SPRING_DATASOURCE_PASSWORD=backpass
+    ports:
+      - "8085:8085"
+    depends_on:
+      - eureka-server
+      - mysql
+    networks:
+      - backend-net
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpass
+      - MYSQL_DATABASE=backdb
+      - MYSQL_USER=backuser
+      - MYSQL_PASSWORD=backpass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend-net
+    restart: unless-stopped
+
+networks:
+  backend-net:
+    driver: bridge
+
+volumes:
+  mysql-data:
+
