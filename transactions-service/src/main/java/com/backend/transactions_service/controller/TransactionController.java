@@ -168,4 +168,6 @@ public class TransactionController {
                 transactionService.getTransactionByIdAndAccountId(accountId, transferenceId);
         return ResponseEntity.ok(transaction);
     }
+
+        // (compat endpoint removed) - use registerTransfer or registerDeposit instead
 }

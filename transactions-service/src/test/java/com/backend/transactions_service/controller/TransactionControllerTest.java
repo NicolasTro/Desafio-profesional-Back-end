@@ -35,12 +35,12 @@ class TransactionControllerTest {
         TransactionRequestDTO dto = new TransactionRequestDTO();
         Transaction tx = new Transaction();
         tx.setId("tx1");
-        when(transactionService.saveTransaction(any(TransactionRequestDTO.class))).thenReturn(null);
+        when(transactionService.transfer(any(TransactionRequestDTO.class))).thenReturn(null);
 
-        ResponseEntity<TransactionResponseDTO> response = transactionController.createTransaction(dto);
+        ResponseEntity<TransactionResponseDTO> response = transactionController.registerTransfer(dto);
 
         assertEquals(201, response.getStatusCodeValue());
-        verify(transactionService).saveTransaction(dto);
+        verify(transactionService).transfer(dto);
     }
 
     @Test

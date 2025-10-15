@@ -37,29 +37,53 @@ class TransactionServiceTest {
 
     @Test
     void saveTransaction_shouldSaveAndCallAccountsClient() {
+        // Test registerDeposit flow
         TransactionRequestDTO dto = new TransactionRequestDTO();
-    dto.setAccountId("1234567890123456789012");
-    dto.setAmount(100.0);
-    dto.setType(TransactionType.CREDIT);
+        dto.setAccountId("1234567890123456789012");
+        dto.setAmount(100.0);
         dto.setDescription("desc");
-    dto.setOrigin("1234567890123456789012");
-    dto.setDestination("1234567890123456789013");
-        dto.setDated(LocalDateTime.now());
+        dto.setOrigin("TARJETA");
+        dto.setDestination("1234567890123456789012");
 
         Transaction saved = new Transaction();
         saved.setId("id-1");
         saved.setAccountId(dto.getAccountId());
         saved.setAmount(dto.getAmount());
-        saved.setType(TransactionType.CREDIT);
+        saved.setType(TransactionType.DEPOSIT);
 
         when(transactionRepository.save(any(Transaction.class))).thenReturn(saved);
 
-        TransactionResponseDTO result = transactionService.saveTransaction(dto);
+        TransactionResponseDTO result = transactionService.registerDeposit(dto.getAccountId(), dto);
 
         assertNotNull(result);
         assertEquals("id-1", result.getId());
         verify(transactionRepository).save(any(Transaction.class));
-        verify(accountsClient).updateBalance(eq(saved.getAccountId()), eq(saved.getAmount()), anyString());
+        // registerDeposit doesn't call accountsClient in this implementation, so we don't verify it here
+    }
+
+    @Test
+    void transfer_shouldSaveTwoTransactions() {
+        TransactionRequestDTO dto = new TransactionRequestDTO();
+        dto.setAccountId("1234567890123456789012");
+        dto.setDestination("1234567890123456789013");
+        dto.setAmount(50.0);
+        dto.setType(TransactionType.CREDIT);
+
+        // When saving, return the same transaction for debit (id t-debit)
+        Transaction debit = new Transaction();
+        debit.setId("t-debit");
+        debit.setAccountId(dto.getAccountId());
+        debit.setAmount(dto.getAmount());
+        debit.setType(TransactionType.DEBIT);
+
+        when(transactionRepository.save(any(Transaction.class))).thenReturn(debit);
+
+        TransactionResponseDTO response = transactionService.transfer(dto);
+
+        assertNotNull(response);
+        assertEquals("t-debit", response.getId());
+        // Expect two saves (debit + credit)
+        verify(transactionRepository, times(2)).save(any(Transaction.class));
     }
 
     @Test

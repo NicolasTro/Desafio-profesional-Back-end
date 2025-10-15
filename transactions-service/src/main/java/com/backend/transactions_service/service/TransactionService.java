@@ -7,6 +7,7 @@ import com.backend.transactions_service.model.domain.TransactionType;
 import com.backend.transactions_service.model.dto.TransactionRequestDTO;
 import com.backend.transactions_service.model.dto.TransactionResponseDTO;
 import com.backend.transactions_service.repository.TransactionRepository;
+import com.backend.transactions_service.client.AccountsClient;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
@@ -18,9 +19,11 @@ import java.util.List;
 public class TransactionService {
 
     private final TransactionRepository transactionRepository;
+    private final AccountsClient accountsClient;
 
-    public TransactionService(TransactionRepository transactionRepository) {
+    public TransactionService(TransactionRepository transactionRepository, AccountsClient accountsClient) {
         this.transactionRepository = transactionRepository;
+        this.accountsClient = accountsClient;
     }
 
     // =============================================================
@@ -95,7 +98,7 @@ public class TransactionService {
         debitTx.setOrigin(origin);
         debitTx.setDestination(destination);
         debitTx.setType(TransactionType.DEBIT);
-        transactionRepository.save(debitTx);
+    Transaction savedDebit = transactionRepository.save(debitTx);
 
         // 2️⃣ CREDIT: entrada de fondos
         Transaction creditTx = new Transaction();
@@ -106,10 +109,10 @@ public class TransactionService {
         creditTx.setOrigin(origin);
         creditTx.setDestination(destination);
         creditTx.setType(TransactionType.CREDIT);
-        transactionRepository.save(creditTx);
+    Transaction savedCredit = transactionRepository.save(creditTx);
 
         log.info("✅ Transferencia registrada correctamente: {} → {} por ${}", origin, destination, amount);
-        return toResponseDTO(debitTx);
+        return toResponseDTO(savedDebit);
     }
 
     // =============================================================
@@ -167,6 +170,8 @@ public class TransactionService {
         dto.setType(tx.getType());
         return dto;
     }
+
+    
 
     private boolean isValidCvu(String cvu) {
         return cvu != null && cvu.trim().matches("\\d{22}");
