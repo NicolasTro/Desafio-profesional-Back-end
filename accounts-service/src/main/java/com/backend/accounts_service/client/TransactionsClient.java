@@ -18,7 +18,7 @@ import java.util.List;
 public interface TransactionsClient {
 
     // =========================================================
-    // 🔹 Registrar ingreso de dinero
+    // 💳 Registrar ingreso de dinero (depósito)
     // =========================================================
     @PostMapping("/transactions/{accountId}/transferences")
     @CircuitBreaker(name = "transactionsService", fallbackMethod = "fallbackTransaction")
@@ -29,19 +29,27 @@ public interface TransactionsClient {
     );
 
     // =========================================================
-    // 🔹 Obtener los últimos 5 movimientos
+    // 🔁 Registrar transferencia entre cuentas
+    // =========================================================
+    @PostMapping("/transactions/transfer")
+    @CircuitBreaker(name = "transactionsService", fallbackMethod = "fallbackTransactionGeneric")
+    @Retry(name = "transactionsRetry")
+    TransactionResponseDTO transfer(@RequestBody TransactionRequestDTO request);
+
+    // =========================================================
+    // 📋 Obtener las últimas 5 transacciones
     // =========================================================
     @GetMapping("/transactions/{accountId}/last5")
     List<TransactionResponseDTO> getLast5Transactions(@PathVariable("accountId") String accountId);
 
     // =========================================================
-    // 🔹 Obtener todas las transacciones (actividad completa)
+    // 📜 Obtener todas las transacciones (actividad completa)
     // =========================================================
     @GetMapping("/transactions/{accountId}/activity")
     List<TransactionResponseDTO> getAllTransactions(@PathVariable("accountId") String accountId);
 
     // =========================================================
-    // 🔹 Obtener una transacción específica por ID
+    // 🔍 Obtener una transacción específica por ID
     // =========================================================
     @GetMapping("/transactions/{accountId}/activity/{transferenceId}")
     TransactionResponseDTO getTransactionByIdAndAccountId(
@@ -49,16 +57,22 @@ public interface TransactionsClient {
             @PathVariable("transferenceId") String transferenceId
     );
 
+    // =========================================================
+    // ⚙️ Métodos de fallback
+    // =========================================================
 
-
-    // ❌ Para depósitos o transferencias, lanzamos excepción para que haya rollback
+    // ❌ Fallo crítico al registrar depósito o transferencia → rollback en AccountService
     default TransactionResponseDTO fallbackTransaction(String accountId,
                                                        TransactionRequestDTO request,
                                                        Throwable ex) {
-        throw new RuntimeException("💥 transactions-service no disponible. Rollback activado.", ex);
+        throw new RuntimeException("💥 transactions-service no disponible. Operación revertida.", ex);
     }
 
-    // ✅ Para lecturas, solo fallback simple
+    default TransactionResponseDTO fallbackTransactionGeneric(TransactionRequestDTO request, Throwable ex) {
+        throw new RuntimeException("💥 transactions-service no disponible. Operación revertida.", ex);
+    }
+
+    // ✅ Fallbacks de lectura → no lanzan error, devuelven datos vacíos
     default List<TransactionResponseDTO> fallbackGetAllTransactions(String accountId, Throwable ex) {
         return Collections.emptyList();
     }

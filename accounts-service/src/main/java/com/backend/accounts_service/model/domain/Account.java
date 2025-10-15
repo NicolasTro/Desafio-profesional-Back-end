@@ -24,9 +24,11 @@ public class Account {
     @Column(nullable = false, unique = true)
     private String alias;
 
+    @Builder.Default
     @Column(nullable = false)
     private Double balance = 0.0;
 
+    @Builder.Default
     @Column(nullable = false)
     private String currency = "ARS";
 }

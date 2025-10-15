@@ -71,50 +71,68 @@ public class AccountController {
     }
 
     // =========================================================
-    // 🔹 Nuevo endpoint: Ingreso de dinero (Depósito)
+    // 🔹 Nuevo endpoint: Depósito o transferencia
     // =========================================================
     @Operation(
-            summary = "Registrar ingreso de dinero en la cuenta",
+            summary = "Registrar una operación (depósito o transferencia)",
             description = """
-                    Registra un ingreso de dinero (depósito) desde una tarjeta de crédito o débito hacia la cuenta del usuario.
-                    Este endpoint coordina con el `transactions-service` utilizando resiliencia (Retry + CircuitBreaker).
-                    Si ocurre un fallo en el registro de la transacción, se revierte automáticamente el saldo.
+                    Este endpoint permite registrar **dos tipos de operaciones**:
+                    
+                    🔸 **Depósito:** cuando el `origin` es `TARJETA` o el `type` es `DEPOSIT`.  
+                    🔸 **Transferencia:** cuando el `origin` o `type` es `TRANSFER`.  
+                    
+                    El `accounts-service` actualiza el saldo y registra la transacción en `transactions-service`.  
+                    Si ocurre un error, se realiza rollback automático.
                     """,
             parameters = {
-                    @Parameter(name = "accountId", description = "Identificador interno de la cuenta", example = "uuid-cuenta-123")
+                    @Parameter(name = "accountId", description = "Identificador interno o CVU de la cuenta", example = "2424522743941613290685")
             },
             requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Datos del ingreso de dinero",
+                    description = "Datos de la operación (depósito o transferencia)",
                     required = true,
                     content = @Content(
                             schema = @Schema(implementation = TransactionRequestDTO.class),
-                            examples = @ExampleObject(
-                                    name = "Ejemplo de ingreso de dinero",
-                                    value = """
-                                            {
-                                              "amount": 2500.00,
-                                              "description": "Carga con tarjeta VISA 4567",
-                                              "origin": "TARJETA",
-                                              "destination": "2424522743941613290685",
-                                              "cardId": "card-abc-123",
-                                              "type": "DEPOSIT"
-                                            }
-                                            """
-                            )
+                            examples = {
+                                    @ExampleObject(
+                                            name = "Ejemplo de depósito",
+                                            value = """
+                                                    {
+                                                      "amount": 2500.00,
+                                                      "description": "Carga con tarjeta VISA 4567",
+                                                      "origin": "TARJETA",
+                                                      "destination": "2424522743941613290685",
+                                                      "cardId": "card-abc-123",
+                                                      "type": "DEPOSIT"
+                                                    }
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "Ejemplo de transferencia",
+                                            value = """
+                                                    {
+                                                      "amount": 500.00,
+                                                      "description": "Transferencia a otro usuario",
+                                                      "origin": "TRANSFER",
+                                                      "destination": "3459876543210987654321",
+                                                      "type": "TRANSFER"
+                                                    }
+                                                    """
+                                    )
+                            }
                     )
             ),
             responses = {
-                    @ApiResponse(responseCode = "201", description = "Depósito realizado correctamente"),
-                    @ApiResponse(responseCode = "400", description = "Datos inválidos o saldo incorrecto"),
-                    @ApiResponse(responseCode = "500", description = "Error al registrar la transacción o servicio no disponible")
+                    @ApiResponse(responseCode = "201", description = "Operación realizada correctamente"),
+                    @ApiResponse(responseCode = "400", description = "Datos inválidos o saldo insuficiente"),
+                    @ApiResponse(responseCode = "500", description = "Error al registrar la operación o servicio no disponible")
             }
     )
     @PostMapping("/{accountId}/transferences")
-    public ResponseEntity<TransactionResponseDTO> registerDeposit(
-        @PathVariable("accountId") String accountId,
+    public ResponseEntity<TransactionResponseDTO> registerOperation(
+            @PathVariable("accountId") String accountId,
             @RequestBody TransactionRequestDTO request) {
 
-        log.info("💰 Iniciando depósito para la cuenta {}", accountId);
+        log.info("💰 Iniciando operación para la cuenta {}", accountId);
         TransactionResponseDTO response = accountService.registerDeposit(accountId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -162,9 +180,9 @@ public class AccountController {
     // 🔹 Tarjetas (cards-service)
     // =========================================================
     @GetMapping("/{cvu}/cards")
-        public ResponseEntity<List<CardResponseDTO>> getCards(@PathVariable String cvu) {
-                return ResponseEntity.ok(accountService.getCards(cvu));
-        }
+    public ResponseEntity<List<CardResponseDTO>> getCards(@PathVariable String cvu) {
+        return ResponseEntity.ok(accountService.getCards(cvu));
+    }
 
     @PostMapping("/{cvu}/cards")
     @Operation(summary = "Agregar tarjeta a una cuenta", description = "Registra una nueva tarjeta (débito/crédito) asociada a la cuenta indicada.",
@@ -185,19 +203,13 @@ public class AccountController {
     }
 
     @GetMapping("/{cvu}/cards/{cardId}")
-    @Operation(summary = "Obtener tarjeta por ID", description = "Devuelve los datos de una tarjeta asociada a la cuenta indicada.",
-            parameters = {@Parameter(name = "cvu", description = "CVU de la cuenta"), @Parameter(name = "cardId", description = "Identificador de la tarjeta")},
-            responses = {@ApiResponse(responseCode = "200", description = "Tarjeta encontrada"), @ApiResponse(responseCode = "404", description = "Tarjeta no encontrada")}
-    )
+    @Operation(summary = "Obtener tarjeta por ID", description = "Devuelve los datos de una tarjeta asociada a la cuenta indicada.")
     public ResponseEntity<CardResponseDTO> getCardById(@PathVariable String cardId, @PathVariable String cvu) {
         return ResponseEntity.ok(accountService.getCardById(cardId, cvu));
     }
 
     @DeleteMapping("/{cvu}/cards/{cardId}")
-    @Operation(summary = "Eliminar tarjeta", description = "Elimina la tarjeta especificada asociada a la cuenta.",
-            parameters = {@Parameter(name = "cvu", description = "CVU de la cuenta"), @Parameter(name = "cardId", description = "Identificador de la tarjeta")},
-            responses = {@ApiResponse(responseCode = "204", description = "Tarjeta eliminada"), @ApiResponse(responseCode = "404", description = "Cuenta o tarjeta no encontrada")}
-    )
+    @Operation(summary = "Eliminar tarjeta", description = "Elimina la tarjeta especificada asociada a la cuenta.")
     public ResponseEntity<Void> deleteCard(@PathVariable String cvu, @PathVariable String cardId) {
         accountService.deleteCard(cvu, cardId);
         return ResponseEntity.noContent().build();
@@ -207,46 +219,32 @@ public class AccountController {
     // 🔹 Actualizar balance (interno)
     // =========================================================
     @PatchMapping("/{cvu}/balance")
-    @Operation(summary = "Actualizar balance (interno)", description = "Actualiza el balance de una cuenta. Usado internamente por transactions-service.",
-        parameters = {@Parameter(name = "cvu", description = "CVU de la cuenta"),
-            @Parameter(name = "amount", description = "Monto a aplicar (positivo)"),
-            @Parameter(name = "type", description = "Tipo: CREDIT o DEBIT")},
-        responses = {@ApiResponse(responseCode = "200", description = "Balance actualizado"), @ApiResponse(responseCode = "400", description = "Tipo inválido o saldo insuficiente")}
-    )
+    @Operation(summary = "Actualizar balance (interno)", description = "Actualiza el balance de una cuenta. Usado internamente por transactions-service.")
     public ResponseEntity<Void> updateBalance(
-        @PathVariable String cvu,
-        @RequestParam Double amount,
-        @RequestParam String type) {
-    accountService.updateBalance(cvu, amount, type);
-    return ResponseEntity.ok().build();
+            @PathVariable String cvu,
+            @RequestParam Double amount,
+            @RequestParam String type) {
+        accountService.updateBalance(cvu, amount, type);
+        return ResponseEntity.ok().build();
     }
 
     // =========================================================
     // 🔹 Transacciones (transactions-service)
     // =========================================================
     @GetMapping("/{accountId}/activity")
-    @Operation(summary = "Obtener transacciones de una cuenta", description = "Devuelve todas las transacciones asociadas a la cuenta indicada.",
-            parameters = {@Parameter(name = "accountId", description = "Identificador/CVU de la cuenta")},
-            responses = {@ApiResponse(responseCode = "200", description = "Lista de transacciones"), @ApiResponse(responseCode = "404", description = "Cuenta no encontrada")}
-    )
+    @Operation(summary = "Obtener transacciones de una cuenta")
     public ResponseEntity<List<TransactionResponseDTO>> getAllTransactions(@PathVariable String accountId) {
         return ResponseEntity.ok(accountService.getAccountTransactions(accountId));
     }
 
     @GetMapping("/{accountId}/transactions/last5")
-    @Operation(summary = "Últimas 5 transacciones", description = "Devuelve las últimas 5 transacciones de la cuenta indicada.",
-            parameters = {@Parameter(name = "accountId", description = "Identificador/CVU de la cuenta")},
-            responses = {@ApiResponse(responseCode = "200", description = "Lista de hasta 5 transacciones")}
-    )
+    @Operation(summary = "Últimas 5 transacciones")
     public ResponseEntity<List<TransactionResponseDTO>> getLast5Transactions(@PathVariable String accountId) {
         return ResponseEntity.ok(accountService.getLast5Transactions(accountId));
     }
 
     @GetMapping("/{accountId}/activity/{transferenceId}")
-    @Operation(summary = "Obtener transacción por ID", description = "Devuelve una transacción específica asociada a la cuenta.",
-            parameters = {@Parameter(name = "accountId", description = "Identificador/CVU de la cuenta"), @Parameter(name = "transferenceId", description = "ID de la transacción")},
-            responses = {@ApiResponse(responseCode = "200", description = "Transacción encontrada"), @ApiResponse(responseCode = "404", description = "Transacción no encontrada")}
-    )
+    @Operation(summary = "Obtener transacción por ID")
     public ResponseEntity<TransactionResponseDTO> getTransactionByIdAndAccountId(
             @PathVariable("accountId") String accountId,
             @PathVariable("transferenceId") String transferenceId) {

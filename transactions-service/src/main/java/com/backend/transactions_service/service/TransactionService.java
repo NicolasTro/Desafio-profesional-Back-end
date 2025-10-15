@@ -1,7 +1,6 @@
 package com.backend.transactions_service.service;
 
-import com.backend.transactions_service.client.AccountsClient;
-import com.backend.transactions_service.exception.ForbiddenException;
+import com.backend.transactions_service.exception.ResourceNotFoundException;
 import com.backend.transactions_service.exception.ValidationException;
 import com.backend.transactions_service.model.domain.Transaction;
 import com.backend.transactions_service.model.domain.TransactionType;
@@ -15,136 +14,143 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
-
 @Log4j2
 public class TransactionService {
 
     private final TransactionRepository transactionRepository;
-    private final AccountsClient accountsClient;
 
-    public TransactionService(TransactionRepository transactionRepository,
-                              AccountsClient accountsClient) {
+    public TransactionService(TransactionRepository transactionRepository) {
         this.transactionRepository = transactionRepository;
-        this.accountsClient = accountsClient;
     }
 
     // =============================================================
-    // 🔹 Obtener últimas 5 transacciones
+    // 🔹 Últimas 5 transacciones
     // =============================================================
     public List<TransactionResponseDTO> findLast5ByAccountId(String accountId) {
         validateAccountId(accountId);
-    // Use compatibility method so tests that stub findLast5ByAccountId(...) work correctly
-    return transactionRepository.findLast5ByAccountId(accountId)
-        .stream()
-        .map(this::toResponseDTO)
-        .toList();
+        return transactionRepository.findLast5ByAccountId(accountId)
+                .stream()
+                .map(this::toResponseDTO)
+                .toList();
     }
 
     // =============================================================
-    // 🔹 Obtener todas las transacciones
+    // 🔹 Todas las transacciones
     // =============================================================
     public List<TransactionResponseDTO> findAllByAccountId(String accountId) {
         validateAccountId(accountId);
-        List<Transaction> transactions = transactionRepository.findByAccountId(accountId);
-        return transactions.stream()
+        return transactionRepository.findByAccountId(accountId)
+                .stream()
                 .map(this::toResponseDTO)
                 .toList();
     }
 
     // =============================================================
-    // 🔹 Crear transacción general
-    // =============================================================
-    public TransactionResponseDTO saveTransaction(TransactionRequestDTO dto) {
-        validateTransactionRequest(dto);
-        validateTransactionBusiness(dto);
-
-        Transaction transaction = new Transaction();
-        transaction.setAccountId(dto.getAccountId());
-        transaction.setAmount(dto.getAmount());
-        transaction.setDated(dto.getDated() != null ? dto.getDated() : LocalDateTime.now());
-        transaction.setDescription(dto.getDescription());
-        transaction.setOrigin(dto.getOrigin());
-        transaction.setDestination(dto.getDestination());
-    transaction.setCardId(dto.getCardId());
-        transaction.setType(dto.getType());
-
-        Transaction saved = transactionRepository.save(transaction);
-
-        try {
-            accountsClient.updateBalance(saved.getAccountId(), saved.getAmount(), saved.getType().name());
-        } catch (Exception e) {
-            throw new ForbiddenException("No se pudo actualizar el balance de la cuenta. Verifique los permisos o conectividad.");
-        }
-
-        return toResponseDTO(saved);
-    }
-
-    // =============================================================
-    // 🆕 Registrar ingreso de dinero (Depósito)
+    // 💳 Registrar depósito
     // =============================================================
     public TransactionResponseDTO registerDeposit(String accountId, TransactionRequestDTO dto) {
-        // Validar parámetros mínimos
-        if (accountId == null || accountId.trim().isEmpty()) {
-            throw new ValidationException("El accountId es obligatorio");
-        }
-        if (dto == null || dto.getAmount() == null || dto.getAmount() <= 0) {
-            throw new ValidationException("El monto del depósito es obligatorio y debe ser mayor a 0");
-        }
-        log.info("entro al registerDeposit");
-        log.info(dto);
+        validateDeposit(dto);
 
-        // Crear entidad Transaction
-        Transaction transaction = new Transaction();
-        transaction.setAccountId(accountId);
-        transaction.setAmount(dto.getAmount());
-        transaction.setDated(LocalDateTime.now());
-        transaction.setDescription(dto.getDescription() != null ? dto.getDescription() : "Depósito");
-        transaction.setOrigin(dto.getOrigin() != null ? dto.getOrigin() : "EXTERNAL_SOURCE");
-        transaction.setDestination(dto.getDestination() != null ? dto.getDestination() : accountId);
-    transaction.setCardId(dto.getCardId());
-        transaction.setType(TransactionType.DEPOSIT);
+        Transaction tx = new Transaction();
+        tx.setAccountId(accountId);
+        tx.setAmount(dto.getAmount());
+        tx.setDated(LocalDateTime.now());
+        tx.setDescription(dto.getDescription() != null ? dto.getDescription() : "Depósito");
+        tx.setOrigin(dto.getOrigin() != null ? dto.getOrigin() : "TARJETA");
+        tx.setDestination(dto.getDestination() != null ? dto.getDestination() : accountId);
+        tx.setCardId(dto.getCardId());
+        tx.setType(TransactionType.DEPOSIT);
 
-        Transaction saved = transactionRepository.save(transaction);
-
-        try {
-        // Actualizar balance en accounts-service
-//            accountsClient.updateBalance(accountId, saved.getAmount(), saved.getType().name());
-        } catch (Exception e) {
-            throw new ForbiddenException("No se pudo actualizar el balance de la cuenta durante el depósito."+ e.getMessage());
-        }
-
+        Transaction saved = transactionRepository.save(tx);
+        log.info("✅ Depósito registrado: cuenta={} monto=${}", accountId, dto.getAmount());
         return toResponseDTO(saved);
     }
 
     // =============================================================
-    // 🔹 Obtener todas las transacciones (actividad completa)
+    // 🔁 Registrar transferencia (DEBIT + CREDIT)
+    // =============================================================
+    public TransactionResponseDTO transfer(TransactionRequestDTO dto) {
+        if (dto == null) throw new ValidationException("Los datos de la transferencia son obligatorios");
+
+        String origin = dto.getAccountId();
+        String destination = dto.getDestination();
+        Double amount = dto.getAmount();
+
+        if (origin == null || destination == null || amount == null) {
+            throw new ValidationException("Datos incompletos para la transferencia");
+        }
+        if (origin.equals(destination)) {
+            throw new ValidationException("No se puede transferir a la misma cuenta");
+        }
+        if (amount <= 0) {
+            throw new ValidationException("El monto debe ser mayor que cero");
+        }
+
+        // 1️⃣ DEBIT: salida de fondos
+        Transaction debitTx = new Transaction();
+        debitTx.setAccountId(origin);
+        debitTx.setAmount(amount);
+        debitTx.setDated(LocalDateTime.now());
+        debitTx.setDescription(dto.getDescription() != null ? dto.getDescription() : "Transferencia enviada");
+        debitTx.setOrigin(origin);
+        debitTx.setDestination(destination);
+        debitTx.setType(TransactionType.DEBIT);
+        transactionRepository.save(debitTx);
+
+        // 2️⃣ CREDIT: entrada de fondos
+        Transaction creditTx = new Transaction();
+        creditTx.setAccountId(destination);
+        creditTx.setAmount(amount);
+        creditTx.setDated(LocalDateTime.now());
+        creditTx.setDescription(dto.getDescription() != null ? dto.getDescription() : "Transferencia recibida");
+        creditTx.setOrigin(origin);
+        creditTx.setDestination(destination);
+        creditTx.setType(TransactionType.CREDIT);
+        transactionRepository.save(creditTx);
+
+        log.info("✅ Transferencia registrada correctamente: {} → {} por ${}", origin, destination, amount);
+        return toResponseDTO(debitTx);
+    }
+
+    // =============================================================
+    // 🔹 Actividad completa
     // =============================================================
     public List<TransactionResponseDTO> getAllTransactions(String accountId) {
         validateAccountId(accountId);
-        List<Transaction> transactions = transactionRepository.findByAccountIdOrderByDatedDesc(accountId);
-        return transactions.stream()
+        return transactionRepository.findByAccountIdOrderByDatedDesc(accountId)
+                .stream()
                 .map(this::toResponseDTO)
                 .toList();
     }
 
     // =============================================================
-    // 🔹 Obtener una transacción específica
+    // 🔹 Transacción específica
     // =============================================================
     public TransactionResponseDTO getTransactionByIdAndAccountId(String accountId, String id) {
-    Transaction transaction = transactionRepository.findByIdAndAccountId(id, accountId)
-        .orElseThrow(() -> new com.backend.transactions_service.exception.ResourceNotFoundException("Transacción no encontrada para el accountId proporcionado"));
-        return toResponseDTO(transaction);
+        Transaction tx = transactionRepository.findByIdAndAccountId(id, accountId)
+                .orElseThrow(() -> new ResourceNotFoundException("Transacción no encontrada para la cuenta indicada"));
+        return toResponseDTO(tx);
     }
 
     // =============================================================
-    // 🔹 Métodos de validación y helpers
+    // 🔧 Validaciones y helpers
     // =============================================================
     private void validateAccountId(String accountId) {
         if (accountId == null || accountId.trim().isEmpty()) {
-            throw new ValidationException("El accountId es obligatorio y no puede estar vacío");
+            throw new ValidationException("El accountId es obligatorio");
         }
         if (!isValidCvu(accountId)) {
             throw new ValidationException("El formato del CVU es inválido");
+        }
+    }
+
+    private void validateDeposit(TransactionRequestDTO dto) {
+        if (dto == null) throw new ValidationException("Los datos del depósito son obligatorios");
+        if (dto.getAmount() == null || dto.getAmount() <= 0) {
+            throw new ValidationException("El monto del depósito debe ser mayor a 0");
+        }
+        if (dto.getAccountId() == null || dto.getAccountId().trim().isEmpty()) {
+            throw new ValidationException("El accountId es obligatorio");
         }
     }
 
@@ -162,86 +168,7 @@ public class TransactionService {
         return dto;
     }
 
-    // =============================================================
-    // 🔹 Validaciones reutilizadas del flujo general
-    // =============================================================
-    private void validateTransactionRequest(TransactionRequestDTO dto) {
-        if (dto == null) throw new ValidationException("Los datos de la transacción son obligatorios");
-        if (dto.getAccountId() == null || dto.getAccountId().trim().isEmpty()) {
-            throw new ValidationException("El accountId es obligatorio");
-        }
-        if (dto.getAmount() == null) {
-            throw new ValidationException("El monto es obligatorio");
-        }
-        if (dto.getType() == null) {
-            throw new ValidationException("El tipo de transacción es obligatorio");
-        }
-        if (dto.getDescription() == null || dto.getDescription().trim().isEmpty()) {
-            throw new ValidationException("La descripción es obligatoria");
-        }
-    }
-
-    private void validateTransactionBusiness(TransactionRequestDTO dto) {
-        validateCvuFormat(dto.getAccountId());
-        validateAmount(dto.getAmount());
-        validateTransactionType(dto.getType());
-        validateTransactionFields(dto);
-        validateDescriptionLength(dto.getDescription());
-        validateCvuFields(dto);
-    }
-
-    private void validateCvuFormat(String accountId) {
-        if (!isValidCvu(accountId)) {
-            throw new ValidationException("El formato del CVU es inválido");
-        }
-    }
-
-    private void validateAmount(Double amount) {
-        if (amount <= 0) {
-            throw new ValidationException("El monto debe ser mayor a cero");
-        }
-        if (amount > 1_000_000.0) {
-            throw new ForbiddenException("El monto excede el límite máximo permitido por transacción");
-        }
-    }
-
-    private void validateTransactionType(TransactionType type) {
-        if (type != TransactionType.CREDIT && type != TransactionType.DEBIT && type != TransactionType.DEPOSIT) {
-            throw new ValidationException("Tipo de transacción inválido: " + type);
-        }
-    }
-
-    private void validateTransactionFields(TransactionRequestDTO dto) {
-        if (dto.getType() == TransactionType.DEBIT &&
-                (dto.getOrigin() == null || dto.getOrigin().trim().isEmpty())) {
-            throw new ValidationException("El origen es obligatorio para transacciones de débito");
-        }
-
-        if (dto.getType() == TransactionType.CREDIT &&
-                (dto.getDestination() == null || dto.getDestination().trim().isEmpty())) {
-            throw new ValidationException("El destino es obligatorio para transacciones de crédito");
-        }
-    }
-
-    private void validateDescriptionLength(String description) {
-        if (description.length() > 255) {
-            throw new ValidationException("La descripción no puede exceder 255 caracteres");
-        }
-    }
-
-    private void validateCvuFields(TransactionRequestDTO dto) {
-        if (dto.getOrigin() != null && !dto.getOrigin().trim().isEmpty() && !isValidCvu(dto.getOrigin())) {
-            throw new ValidationException("El formato del CVU de origen es inválido");
-        }
-
-        if (dto.getDestination() != null && !dto.getDestination().trim().isEmpty() && !isValidCvu(dto.getDestination())) {
-            throw new ValidationException("El formato del CVU de destino es inválido");
-        }
-    }
-
     private boolean isValidCvu(String cvu) {
-        if (cvu == null || cvu.trim().isEmpty()) return false;
-        String cleanCvu = cvu.trim();
-        return cleanCvu.matches("\\d{22}");
+        return cvu != null && cvu.trim().matches("\\d{22}");
     }
 }

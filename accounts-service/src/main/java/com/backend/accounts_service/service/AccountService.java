@@ -8,7 +8,6 @@ import com.backend.accounts_service.model.dto.*;
 import com.backend.accounts_service.repository.AccountRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.FeignException;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -102,7 +101,6 @@ public class AccountService {
 
     public CardResponseDTO addCard(String cvu, CardRequestDTO request) {
         request.setAccountId(cvu);
-
         try {
             return cardsClient.addCard(cvu, request);
         } catch (feign.FeignException.BadRequest e) {
@@ -151,7 +149,7 @@ public class AccountService {
     }
 
     // =============================================================
-    // Registrar ingreso de dinero (depósito)
+    // Registrar ingreso o transferencia
     // =============================================================
     @Transactional(rollbackFor = Exception.class)
     public TransactionResponseDTO registerDeposit(String accountId, TransactionRequestDTO request) {
@@ -162,26 +160,65 @@ public class AccountService {
         Double originalBalance = account.getBalance() != null ? account.getBalance() : 0.0;
 
         try {
-            // Validación: si el ingreso proviene de una tarjeta, el cardId es obligatorio
-            if (request != null && "TARJETA".equalsIgnoreCase(request.getOrigin())) {
-                if (request.getCardId() == null || request.getCardId().trim().isEmpty()) {
+            String origin = request.getOrigin() != null ? request.getOrigin().toUpperCase() : "";
+            String type = request.getType() != null ? request.getType().toUpperCase() : "";
+
+            // =========================================================
+            // 💳 Caso 1: Depósito (desde tarjeta)
+            // =========================================================
+            if ("TARJETA".equals(origin) || "DEPOSIT".equals(type)) {
+
+                if (request.getAmount() == null || request.getAmount() <= 0) {
+                    throw new com.backend.accounts_service.exception.ValidationException("Monto inválido para depósito");
+                }
+
+                if ("TARJETA".equals(origin) && (request.getCardId() == null || request.getCardId().trim().isEmpty())) {
                     throw new com.backend.accounts_service.exception.ValidationException("El campo cardId es obligatorio cuando el origen es TARJETA");
                 }
+
+                account.setBalance(originalBalance + request.getAmount());
+                accountRepository.save(account);
+
+                TransactionResponseDTO transaction = transactionsClient.createTransaction(accountId, request);
+                log.info("✅ Depósito exitoso en cuenta {}. Nuevo saldo: {}", accountId, account.getBalance());
+                return transaction;
             }
-            // 1️⃣ Actualiza saldo localmente
-            account.setBalance(originalBalance + request.getAmount());
-            accountRepository.save(account);
 
-            // 2️⃣ Registra transacción en otro microservicio
-            TransactionResponseDTO transaction = transactionsClient.createTransaction(accountId, request);
+            // =========================================================
+            // 🔁 Caso 2: Transferencia entre cuentas
+            // =========================================================
+            if ("TRANSFER".equals(origin) || "TRANSFER".equals(type)) {
 
-            log.info("✅ Depósito exitoso en cuenta {}. Nuevo saldo: {}", accountId, account.getBalance());
-            return transaction;
+                if (request.getDestination() == null || request.getDestination().trim().isEmpty()) {
+                    throw new com.backend.accounts_service.exception.ValidationException("El CVU destino es obligatorio");
+                }
+                if (accountId.equals(request.getDestination())) {
+                    throw new com.backend.accounts_service.exception.ValidationException("No se puede transferir a la misma cuenta");
+                }
+                if (account.getBalance() < request.getAmount()) {
+                    throw new com.backend.accounts_service.exception.ValidationException("Fondos insuficientes para transferir");
+                }
+
+                // 1️⃣ Actualiza saldo localmente (resta del origen)
+                account.setBalance(originalBalance - request.getAmount());
+                accountRepository.save(account);
+
+                // 2️⃣ Registra las transacciones (DEBIT/CREDIT) en transactions-service
+                TransactionResponseDTO transaction = transactionsClient.transfer(request);
+                log.info("✅ Transferencia exitosa desde {} hacia {} por ${}. Nuevo saldo: {}",
+                        accountId, request.getDestination(), request.getAmount(), account.getBalance());
+                return transaction;
+            }
+
+            throw new com.backend.accounts_service.exception.ValidationException(
+                    "Tipo de operación no soportado. Origin: " + origin + ", Type: " + type
+            );
 
         } catch (Exception ex) {
-            log.error("❌ Error al procesar depósito, rollback activado. Balance restaurado a {}", originalBalance, ex);
-
-            throw new RuntimeException("No se pudo registrar el ingreso. Operación revertida.", ex);
+            log.error("❌ Error en operación, rollback activado. Balance restaurado a {}", originalBalance, ex);
+            account.setBalance(originalBalance);
+            accountRepository.save(account);
+            throw new RuntimeException("No se pudo completar la operación. Revertida.", ex);
         }
     }
 
